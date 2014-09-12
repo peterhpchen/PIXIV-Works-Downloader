@@ -1,0 +1,21 @@
+{
+    //Required
+    "manifest_version" : 2,
+    "author" : "HP Chen",
+    "name" : "PIXIV Works Downloader",
+    "version" : "0.1",
+
+    //Recommended
+    "description" : "Downloaded the spacify artist's works on PIXIV",
+    "icons" : {},
+
+    "page_action" : {"default_icon" : "icon.png"},
+
+    "background" : { 
+        "scripts" : ["eventPage.js"],
+        "persistent" : false
+    },
+	
+	"permissions": [ "declarativeContent" ]
+}
+
