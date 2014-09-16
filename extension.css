@@ -1,3 +1,8 @@
-li.canDownload {
-    background-color : yellow ;
+.overlay {
+    position : absolute;
+}
+
+.icon {
+    width : 15%;
+    height : auto;
 }
