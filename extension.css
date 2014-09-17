@@ -1,8 +1,13 @@
 .overlay {
     position : absolute;
+    opacity : 0.4;
 }
 
 .icon {
-    width : 15%;
-    height : auto;
+    background-color : white !important;
+    width : 30px !important;
+    height : auto !important;
+    margin : 0 !important;
+    border : 1px !important;
+    padding : 2px !important;
 }
