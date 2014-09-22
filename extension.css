@@ -1,6 +1,7 @@
 .overlay {
     position : absolute;
     opacity : 0.4;
+    z-index : 10001
 }
 
 .icon {
@@ -8,6 +9,6 @@
     width : 30px !important;
     height : auto !important;
     margin : 0 !important;
-    border : 1px !important;
-    padding : 2px !important;
+    border : 0 !important;
+    padding : 0 !important;
 }
