@@ -1,5 +1,16 @@
 $(document).ready(function() {
+
+    //get image url
     var enlargeIconUrl = chrome.extension.getURL("image/enlarge.png");
+    var crossIconUrl = chrome.extension.getURL("image/cross.png");
+    var loadingIconUrl = chrome.extension.getURL("image/loading.gif");
+    var downloadIconUrl = chrome.extension.getURL("image/download.png");
+    var multiDownloadIconUrl = chrome.extension.getURL("image/multiDownload.png");
+    var upIconUrl = chrome.extension.getURL("image/arrows/up.png");
+    var downIconUrl = chrome.extension.getURL("image/arrows/down.png");
+    var leftIconUrl = chrome.extension.getURL("image/arrows/left.png");
+    var rightIconUrl = chrome.extension.getURL("image/arrows/right.png");
+
     var imageItem = $(".image-item");
     imageItem.find("img").bind({
         mouseenter : function(event) {

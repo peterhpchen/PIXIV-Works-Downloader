@@ -5,7 +5,7 @@
 }
 
 .icon {
-    background-color : white !important;
+    background-color : rgba(0,0,0,0) !important;
     width : 30px !important;
     height : auto !important;
     margin : 0 !important;
