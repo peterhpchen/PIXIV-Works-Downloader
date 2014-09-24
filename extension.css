@@ -12,3 +12,18 @@
     border : 0 !important;
     padding : 0 !important;
 }
+
+#box {
+    display : none;
+    padding : 20px;
+}
+
+#boxShadow {
+    display : none;
+    position : fixed;
+    background-color : Black;
+    opacity : 0.3;
+    top : 0;
+    left : 0;
+    z-index : 9999;
+}
