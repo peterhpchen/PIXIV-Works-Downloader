@@ -34,19 +34,19 @@ $(document).ready(function() {
             }).append(
                 $('<img>', {
                     id : "boxClose",
-                    class : "icon",
+                    class : "icon overlay boxController",
                     src : IconUrl.cross
                 })
             ).append(
                 $('<img>', {
                     id : "boxDownload",
-                    class : "icon",
+                    class : "icon overlay boxController",
                     src : IconUrl.download
                 })
             ).append(
                 $('<img>', {
                     id : "boxMultiDownload",
-                    class : "icon",
+                    class : "icon overlay boxController",
                     src : IconUrl.multiDownload
                 })
             ).append(
@@ -64,7 +64,7 @@ $(document).ready(function() {
                     id : "boxLeft" 
                 }).append(
                     $('<img>', {
-                        class : "icon",
+                        class : "icon overlay boxController",
                         src : IconUrl.left 
                     })
                 ) //end div#boxleft append
@@ -73,7 +73,7 @@ $(document).ready(function() {
                     id : "boxRight"
                 }).append(
                     $('<img>', {
-                        class : "icon",
+                        class : "icon overlay boxController",
                         src : IconUrl.right
                     })
                 ) //end div#boxleft append
@@ -82,7 +82,7 @@ $(document).ready(function() {
                     id : "boxUp" 
                 }).append(
                     $('<img>', {
-                        class : "icon",
+                        class : "icon overlay boxController",
                         src : IconUrl.up
                     })
                 ) //end div#boxleft append
@@ -91,7 +91,7 @@ $(document).ready(function() {
                     id : "boxDown"
                 }).append(
                     $('<img>', {
-                        class : "icon",
+                        class : "icon overlay boxController",
                         src : IconUrl.down
                     })
                 ) //end div#boxleft append
@@ -162,9 +162,109 @@ $(document).ready(function() {
                 initialEnlarge($(this));
             }
         ).click($thumbnail, function(event) {
-            var $this = $(this);
-            var $target = $(event.data);
-            var href = $target.closest('a').attr('href');
+            var $this = $(this); //enlargeIcon
+            var $thumbnail = $(event.data); //thumbnail
+            var $box = $('#box'); //box
+            var $boxContent = $('#boxContent'); //box content
+            var $boxLoading = $('#boxLoading'); //box loading
+            var href = $thumbnail.closest('a').attr('href'); //picture link
+
+            //get thumbnail coordinate, width and height
+            var thumbnailTop = $thumbnail.offset().top;
+            var thumbnailLeft = $thumbnail.offset().left;
+            var thumbnailWidth = $thumbnail.width();
+            var thumbnailHeight = $thumbnail.height();
+            //end get thumbnail coordinate, width and height
+
+            //set thumbnail for box
+            $boxContent
+                .append($('<img>', {
+                    src : $thumbnail.attr('src')
+                }).css({
+                    'height' : thumbnailHeight,
+                    'width' : thumbnailWidth
+                }));
+            //end set thumbnail for box
+
+            $.get(href, function(data) {
+                var $parsed = $('<div>').append(data);
+                var medienSrc = $parsed.find('.works_display').children('a').children('img').attr('src');
+                var bigSrc = medienSrc.replace('_m', '');
+                $boxContent.find("img").attr('src', medienSrc).load(function() {
+
+                    $this = $(this);
+                    var medienPicture = new Image();
+                    medienPicture.src = $this.attr("src");
+                    var topOffsetFromBeforeToAfter = (medienPicture.height - $this.height())/2;
+                    var leftOffsetFromBeforeToAfter = (medienPicture.width - $this.width())/2;
+                    $boxLoading.css({display : "none"});
+                    /*
+                    $this.css({
+                        height : medienPicture.height,
+                        width : medienPicture.width
+                    });
+                    */
+                    $box.animate({
+                        top : "-=" + topOffsetFromBeforeToAfter,
+                        left : "-=" + leftOffsetFromBeforeToAfter,
+                        height : medienPicture.height,
+                        width : medienPicture.width
+                    }, {
+                        step : function(now, fx) {
+                        //    $box.css({
+                        //top : "-=" + topOffsetFromBeforeToAfter,
+                        //left : "-=" + leftOffsetFromBeforeToAfter,
+                        //    });
+                        },
+                        complete : function() {
+                            $boxContent.find("img").css({display : "inline"});
+                        }
+                    });
+                });
+            });
+
+            $('.boxController').css({display : 'none'}); //button display none
+
+            //set box initial value
+            var initialBoxLeft = thumbnailLeft - ($box.outerWidth(true) - $box.width())/2 + ($thumbnail.outerWidth() - thumbnailWidth)/2;
+            var initialBoxTop = thumbnailTop - ($box.outerHeight(true) - $box.height())/2 + ($thumbnail.outerHeight() - thumbnailHeight)/2;
+            $box.css({
+                'top' : initialBoxTop,
+                'left' : initialBoxLeft,
+                'display' : 'inline',
+                'position' : 'absolute'
+            });
+            //end set box initial value
+
+            //set boxLoading initial position
+            var initialBoxLoadingLeft = $boxLoading.position().top + ($box.width() - $boxLoading.width())/2;
+            var initialBoxLoadingTop = $boxLoading.position().left + ($box.height() - $boxLoading.height())/2;
+            $boxLoading.css({
+                'top' : initialBoxLoadingTop,
+                'left' : initialBoxLoadingLeft
+            });
+            //end set boxLoading initial position
+
+            $box.animate({
+                top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
+                left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
+            });
+        });
+    };
+
+    setEnlargeEvent2 = function($enlarge, $thumbnail) {
+
+        $enlarge.hover(
+            function() {
+                $(this).css("opacity", 1.0);
+            },
+            function() {
+                initialEnlarge($(this));
+            }
+        ).click($thumbnail, function(event) {
+            var $this = $(this); //enlargeIcon
+            var $target = $(event.data); //thumbnail
+            var href = $target.closest('a').attr('href'); //picture link
 
             //get thumbnail coordinate, width and height
             var thumbnailTop = $target.top;
