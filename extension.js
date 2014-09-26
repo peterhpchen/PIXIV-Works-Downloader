@@ -64,6 +64,7 @@ $(document).ready(function() {
                     id : "boxLeft" 
                 }).append(
                     $('<img>', {
+                        id : "boxLeftIcon",
                         class : "icon overlay boxController",
                         src : IconUrl.left 
                     })
@@ -73,6 +74,7 @@ $(document).ready(function() {
                     id : "boxRight"
                 }).append(
                     $('<img>', {
+                        id : "boxRightIcon",
                         class : "icon overlay boxController",
                         src : IconUrl.right
                     })
@@ -82,6 +84,7 @@ $(document).ready(function() {
                     id : "boxUp" 
                 }).append(
                     $('<img>', {
+                        id : "boxUpIcon",
                         class : "icon overlay boxController",
                         src : IconUrl.up
                     })
@@ -91,6 +94,7 @@ $(document).ready(function() {
                     id : "boxDown"
                 }).append(
                     $('<img>', {
+                        id : "boxDownIcon",
                         class : "icon overlay boxController",
                         src : IconUrl.down
                     })
@@ -162,11 +166,14 @@ $(document).ready(function() {
                 initialEnlarge($(this));
             }
         ).click($thumbnail, function(event) {
+
             var $this = $(this); //enlargeIcon
             var $thumbnail = $(event.data); //thumbnail
             var $box = $('#box'); //box
             var $boxContent = $('#boxContent'); //box content
             var $boxLoading = $('#boxLoading'); //box loading
+            var $boxShadow = $('#boxShadow'); //box shadow
+
             var href = $thumbnail.closest('a').attr('href'); //picture link
 
             //get thumbnail coordinate, width and height
@@ -176,9 +183,11 @@ $(document).ready(function() {
             var thumbnailHeight = $thumbnail.height();
             //end get thumbnail coordinate, width and height
 
+
             //set thumbnail for box
             $boxContent
                 .append($('<img>', {
+                    id : "boxImg",
                     src : $thumbnail.attr('src')
                 }).css({
                     'height' : thumbnailHeight,
@@ -187,23 +196,37 @@ $(document).ready(function() {
             //end set thumbnail for box
 
             $.get(href, function(data) {
+
+                //parse web to get medien source
                 var $parsed = $('<div>').append(data);
                 var medienSrc = $parsed.find('.works_display').children('a').children('img').attr('src');
-                var bigSrc = medienSrc.replace('_m', '');
-                $boxContent.find("img").attr('src', medienSrc).load(function() {
+                //end parse web to get medien source
+
+                var bigSrc = medienSrc.replace('_m', ''); //big picture source is medien source remove _m
+
+                $boxImg = $('#boxImg');
+                
+                //when #boxImg's src change, change top, left, height and width
+                $boxImg.attr('src', medienSrc).load(function() {
 
                     $this = $(this);
+
+                    //get initial picture size
                     var medienPicture = new Image();
                     medienPicture.src = $this.attr("src");
+                    //end get initial picture size
+
+                    //We have to get gap of size between thumbnail and medien picture
                     var topOffsetFromBeforeToAfter = (medienPicture.height - $this.height())/2;
                     var leftOffsetFromBeforeToAfter = (medienPicture.width - $this.width())/2;
-                    $boxLoading.css({display : "none"});
-                    /*
-                    $this.css({
-                        height : medienPicture.height,
-                        width : medienPicture.width
-                    });
-                    */
+
+                    $boxLoading.css({
+                        display : "none",
+                        //top : 0,
+                        //left : 0
+                    }); //loading icon disable
+
+                    //animate box and boxImg
                     $box.animate({
                         top : "-=" + topOffsetFromBeforeToAfter,
                         left : "-=" + leftOffsetFromBeforeToAfter,
@@ -211,16 +234,22 @@ $(document).ready(function() {
                         width : medienPicture.width
                     }, {
                         step : function(now, fx) {
-                        //    $box.css({
-                        //top : "-=" + topOffsetFromBeforeToAfter,
-                        //left : "-=" + leftOffsetFromBeforeToAfter,
-                        //    });
+                           if(fx.prop === "height") {
+                               $boxImg.css({
+                                    height : now
+                               });
+                           }
+                           if(fx.prop === "width") {
+                               $boxImg.css({
+                                    width : now
+                               });
+                           }
                         },
                         complete : function() {
-                            $boxContent.find("img").css({display : "inline"});
+                            //$('.boxController').css({display : "inline"});
                         }
-                    });
-                });
+                    }); //end box animate
+                }); //end #boxImg load
             });
 
             $('.boxController').css({display : 'none'}); //button display none
@@ -236,84 +265,65 @@ $(document).ready(function() {
             });
             //end set box initial value
 
+
+            $boxShadow.css({display : "inline"}).unbind()
+            .click({'box' : $box, 'thumbnailTop' : thumbnailTop, 'thumbnailLeft' : thumbnailLeft}, function(event) {
+                var $box = event.data.box;
+                var thumbnailTop = event.data.thumbnailTop;
+                var thumbnailLeft = event.data.thumbnailLeft;
+                $('.boxController').css({display : "none"});
+                $box.animate({
+                    'width' : thumbnailWidth,
+                    'height' : thumbnailHeight,
+                    'top' : initialBoxTop,
+                    'left' : initialBoxLeft 
+                }, {
+                    step : function(now, fx) {
+                        if(fx.prop === "width") {
+                            $('#boxImg').css({
+                                width : now
+                            });
+                        }
+                        if(fx.prop === "height") {
+                            $('#boxImg').css({
+                                height : now
+                            });
+                        }
+                    },
+                    complete : function() {
+                        $boxShadow.css("display", "none");
+                        $box.css({
+                            display : "none",
+                            width : "auto",
+                            height : "auto"
+                        });
+                        $('#boxImg').remove();
+                    }
+                });
+            });
+
             //set boxLoading initial position
             var initialBoxLoadingLeft = $boxLoading.position().top + ($box.width() - $boxLoading.width())/2;
             var initialBoxLoadingTop = $boxLoading.position().left + ($box.height() - $boxLoading.height())/2;
-            $boxLoading.css({
-                'top' : initialBoxLoadingTop,
-                'left' : initialBoxLoadingLeft
-            });
+            $boxLoading.css({display : "inline"})
+                .css({
+                    top : "50%",
+                    left : "50%"
+                }).css({
+                    top : $boxLoading.position().top - $boxLoading.height()/2,
+                    left : $boxLoading.position().left - $boxLoading.width()/2,
+                });
             //end set boxLoading initial position
 
             $box.animate({
                 top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
                 left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
             });
-        });
-    };
-
-    setEnlargeEvent2 = function($enlarge, $thumbnail) {
-
-        $enlarge.hover(
-            function() {
-                $(this).css("opacity", 1.0);
-            },
-            function() {
-                initialEnlarge($(this));
-            }
-        ).click($thumbnail, function(event) {
-            var $this = $(this); //enlargeIcon
-            var $target = $(event.data); //thumbnail
-            var href = $target.closest('a').attr('href'); //picture link
-
-            //get thumbnail coordinate, width and height
-            var thumbnailTop = $target.top;
-            var thumbnailLeft = $target.left;
-            var thumbnailWidth = $target.width();
-            var thumbnailHeight = $target.height();
-            //end get thumbnail coordinate, width and height
-
-            $target.resize(function() {
-                $this = $(this);
-                $this.css({
-                    'top' : Math.floor((window.innerHeight - $this.height())/2),
-                    'left' : Math.floor(( window.innerWidth - $this.width())/2)
-                });
-            });
-            $.get(href, function(data) {
-                var $parsed = $('<div>').append(data);
-                var medienSrc = $parsed.find('.works_display').children('a').children('img').attr('src');
-                var bigSrc = medienSrc.replace('_m', '');
-                $target.attr('src', medienSrc).load(function() {
-                    $target.resize();
-                });
-            });
-            $target.css({
-                'position' : 'fixed',
-                'z-index' : 10000,
-                //'width' : window.innerWidth,
-                //'height' : window.innerHeight,
-                'top' : Math.floor((window.innerHeight - thumbnailHeight)/2),
-                'left' : Math.floor(( window.innerWidth - thumbnailWidth)/2)
-            });
-            $('#boxShadow').css("display", "inline")
-            .click({'target' : $target, 'thumbnailTop' : thumbnailTop, 'thumbnailLeft' : thumbnailLeft}, function(event) {
-                var $target = event.data.target;
-                var thumbnailTop = event.data.thumbnailTop;
-                var thumbnailLeft = event.data.thumbnailLeft;
-                $target.css({
-                    'position' : 'static',
-                    'width' : thumbnailWidth,
-                    'height' : thumbnailHeight,
-                    'top' : thumbnailTop,
-                    'left' : thumbnailLeft
-                });
-                $(this).css("display", "none");
-            });
+            
             initialEnlarge($this);
             event.preventDefault();
         });
-    }; //end setEnlargeEvent
+    };
 
     setEnlarge = function(IconUrl) {
         $('body').append(
@@ -333,4 +343,26 @@ $(document).ready(function() {
     setBox(IconUrl);
     setEnlarge(IconUrl);
     setThumbnail();
+
+    $(window).resize(function() {
+        var $boxShadow = $('#boxShadow');
+        $boxShadow.css({
+            width : window.innerWidth,
+            height : window.innerHeight
+        });
+
+        var $box = $('#box');
+        $box.css({
+            top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
+            left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
+        }); //end box animate
+    }); //end window resize
+
+    $(window).scroll(function() {
+        var $box = $('#box');
+        $box.css({
+            top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
+            left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
+        }); //end box animate
+    }); //end window scroll
 });

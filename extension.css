@@ -15,41 +15,93 @@
 
 #box {
     display : none;
-    padding : 20px;
+    padding : 15px;
     z-index : 10002;
-    background-color : black;
+    background-color : white;
+}
+
+#boxContent {
+}
+
+#boxImg {
+}
+#boxClose, #boxDownload, #boxMultiDownload {
+    top : -15px;
 }
 
 #boxClose {
-    position : absolute;
-}
-
-#boxUp {
-    position : absolute;
-}
-
-#boxDown {
-    position : absolute;
-}
-
-#boxLeft {
-    position : absolute;
-}
-
-#boxRight {
-    position : absolute;
+    right : -15px;
 }
 
 #boxDownload {
-    position : absolute;
+    right : 15px;
+    
 }
 
 #boxMultiDownload{
+    right : 45px;
+}
+
+#boxUp, #boxDown {
     position : absolute;
+    width : 30%;
+    left : 35%;
+    height : 35%;
+}
+
+#boxUp {
+    top : 0px;
+}
+
+#boxDown {
+    bottom : 0px;
+}
+
+#boxUpIcon, #boxDownIcon {
+    left : 50%;
+    margin-left : -15px !important;
+}
+
+#boxUpIcon {
+    top : 30px;
+}
+
+#boxDownIcon {
+    bottom : 30px;
+}
+
+#boxLeft, #boxRight {
+    position : absolute;
+    height : 100%;
+    width : 35%;
+    top : 0px;
+}
+
+#boxLeft {
+    left : 0px;
+}
+
+#boxRight {
+    right : 0px;
+}
+
+#boxRightIcon, #boxLeftIcon {
+    top : 50%;
+    margin-top : -15px !important;
+}
+
+#boxRightIcon {
+    right : 30px;
+}
+
+#boxLeftIcon {
+    left : 30px;
 }
 
 #boxLoading {
     position : absolute;
+    display : block;
+    z-index : 20000;
 }
 
 #boxShadow {
