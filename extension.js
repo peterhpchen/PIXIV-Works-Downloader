@@ -156,6 +156,79 @@ $(document).ready(function() {
             }); //end hover
     }; //end setThumbnail
 
+    urlParam = function(url, name) {
+        var results = new RegExp('[?&]' + name + '=([^&#]*)').exec(url);
+       return results[1] || 0;
+    }; //end urlParam
+
+    getDetailByAjax = function(href) {
+
+            //get medien picture by ajax
+            $.get(href, function(data) {
+
+                var $boxLoading = $('#boxLoading');
+                var $box = $('#box');
+
+                //parse web to get medien source
+                var $parsed = $('<div>').append(data);
+                var detailHref = $parsed.find('.works_display').children('a').attr('href');
+                var mode = urlParam(detailHref, "mode");
+                if(mode === "manga") {
+                    $('#boxDownIcon').css({display : "inline"});
+                }
+                var medienSrc = $parsed.find('.works_display').children('a').children('img').attr('src');
+                //end parse web to get medien source
+
+                var bigSrc = medienSrc.replace('_m', ''); //big picture source is medien source remove _m
+
+                var $boxImg = $('#boxImg');
+                
+                //when #boxImg's src change, change top, left, height and width
+                $boxImg.attr('src', medienSrc).load(function() {
+
+                    $this = $(this); //boxImg
+
+                    //get initial picture size
+                    var medienPicture = new Image();
+                    medienPicture.src = $this.attr("src");
+                    //end get initial picture size
+
+                    //We have to get gap of size between thumbnail and medien picture
+                    var topOffsetFromBeforeToAfter = (medienPicture.height - $this.height())/2;
+                    var leftOffsetFromBeforeToAfter = (medienPicture.width - $this.width())/2;
+
+                    $boxLoading.css({
+                        display : "none",
+                    }); //boxLoading icon disable
+
+                    //animate box and boxImg
+                    $box.animate({
+                        top : "-=" + topOffsetFromBeforeToAfter,
+                        left : "-=" + leftOffsetFromBeforeToAfter,
+                        height : medienPicture.height,
+                        width : medienPicture.width
+                    }, {
+                        step : function(now, fx) {
+                           if(fx.prop === "height") {
+                               $boxImg.css({
+                                    height : now
+                               });
+                           }
+                           if(fx.prop === "width") {
+                               $boxImg.css({
+                                    width : now
+                               });
+                           }
+                        },
+                        complete : function() {
+                        }
+                    }); //end box animate
+                }); //end #boxImg load
+            });
+            //end get medien picture by ajax
+
+    }; //end getDetailByAjax
+
     setEnlargeEvent = function($enlarge, $thumbnail) {
 
         $enlarge.hover(
@@ -183,6 +256,7 @@ $(document).ready(function() {
             var thumbnailHeight = $thumbnail.height();
             //end get thumbnail coordinate, width and height
 
+            $('html').css({overflow : "hidden"}); //disable scroll bar
 
             //set thumbnail for box
             $boxContent
@@ -195,62 +269,7 @@ $(document).ready(function() {
                 }));
             //end set thumbnail for box
 
-            $.get(href, function(data) {
-
-                //parse web to get medien source
-                var $parsed = $('<div>').append(data);
-                var medienSrc = $parsed.find('.works_display').children('a').children('img').attr('src');
-                //end parse web to get medien source
-
-                var bigSrc = medienSrc.replace('_m', ''); //big picture source is medien source remove _m
-
-                $boxImg = $('#boxImg');
-                
-                //when #boxImg's src change, change top, left, height and width
-                $boxImg.attr('src', medienSrc).load(function() {
-
-                    $this = $(this);
-
-                    //get initial picture size
-                    var medienPicture = new Image();
-                    medienPicture.src = $this.attr("src");
-                    //end get initial picture size
-
-                    //We have to get gap of size between thumbnail and medien picture
-                    var topOffsetFromBeforeToAfter = (medienPicture.height - $this.height())/2;
-                    var leftOffsetFromBeforeToAfter = (medienPicture.width - $this.width())/2;
-
-                    $boxLoading.css({
-                        display : "none",
-                        //top : 0,
-                        //left : 0
-                    }); //loading icon disable
-
-                    //animate box and boxImg
-                    $box.animate({
-                        top : "-=" + topOffsetFromBeforeToAfter,
-                        left : "-=" + leftOffsetFromBeforeToAfter,
-                        height : medienPicture.height,
-                        width : medienPicture.width
-                    }, {
-                        step : function(now, fx) {
-                           if(fx.prop === "height") {
-                               $boxImg.css({
-                                    height : now
-                               });
-                           }
-                           if(fx.prop === "width") {
-                               $boxImg.css({
-                                    width : now
-                               });
-                           }
-                        },
-                        complete : function() {
-                            //$('.boxController').css({display : "inline"});
-                        }
-                    }); //end box animate
-                }); //end #boxImg load
-            });
+            getDetailByAjax(href);
 
             $('.boxController').css({display : 'none'}); //button display none
 
@@ -265,7 +284,7 @@ $(document).ready(function() {
             });
             //end set box initial value
 
-
+            //set boxshadow. When click boxShadow, disable box and boxShadow
             $boxShadow.css({display : "inline"}).unbind()
             .click({'box' : $box, 'thumbnailTop' : thumbnailTop, 'thumbnailLeft' : thumbnailLeft}, function(event) {
                 var $box = event.data.box;
@@ -297,10 +316,11 @@ $(document).ready(function() {
                             width : "auto",
                             height : "auto"
                         });
+                        $('html').css({overflow : "auto"}); //enable scroll bar
                         $('#boxImg').remove();
                     }
-                });
-            });
+                }); //end box animate
+            }); //end boxShadow click
 
             //set boxLoading initial position
             var initialBoxLoadingLeft = $boxLoading.position().top + ($box.width() - $boxLoading.width())/2;
@@ -315,6 +335,7 @@ $(document).ready(function() {
                 });
             //end set boxLoading initial position
 
+            //move box to centered
             $box.animate({
                 top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
                 left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
@@ -358,11 +379,11 @@ $(document).ready(function() {
         }); //end box animate
     }); //end window resize
 
-    $(window).scroll(function() {
-        var $box = $('#box');
-        $box.css({
-            top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
-            left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
-        }); //end box animate
-    }); //end window scroll
+    //$(window).scroll(function() {
+    //    var $box = $('#box');
+    //    $box.css({
+    //        top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
+    //        left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
+    //    }); //end box animate
+    //}); //end window scroll
 });

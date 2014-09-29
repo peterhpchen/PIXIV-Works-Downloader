@@ -2,23 +2,28 @@
     //Required
     "manifest_version" : 2,
     "author" : "HP Chen",
-    "name" : "PIXIV Works Downloader",
-    "version" : "0.1",
+    "name" : "PIXIV Viewer",
+    "version" : "1.0",
 
     //Recommended
-    "description" : "Downloaded the spacify artist's works on PIXIV",
-    "icons" : {},
-
-    "page_action" : {
-        "default_title" : "Download all works",
-        "default_icon" : "icon.png",
-        "default_popup" : "popup.html"
+    "description" : "More easily view artist's works on PIXIV",
+    "icons" : {
+        "16" : "image/icons/PIXIVViewer16.png",
+        "32" : "image/icons/PIXIVViewer32.png",
+        "48" : "image/icons/PIXIVViewer48.png",
+        "128" : "image/icons/PIXIVViewer128.png"
     },
 
-    "background" : { 
-        "scripts" : ["eventPage.js"],
-        "persistent" : false
-    },
+//    "page_action" : {
+//        "default_title" : "Download all works",
+//        "default_icon" : "icon.png",
+//        "default_popup" : "popup.html"
+//    },
+//
+//    "background" : { 
+//        "scripts" : ["eventPage.js"],
+//        "persistent" : false
+//    },
 	
     "content_scripts" : [
         {
@@ -30,7 +35,7 @@
 	
     "web_accessible_resources" : [
         "image/*" 
-    ],
-    "permissions": [ "declarativeContent" ]
+    ]//,
+//    "permissions": [ "declarativeContent" ]
 }
 
