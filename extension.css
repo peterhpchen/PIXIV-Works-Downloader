@@ -13,6 +13,10 @@
     padding : 0 !important;
 }
 
+.icon:hover {
+    opacity : 1.0;
+}
+
 #box {
     display : none;
     padding : 15px;

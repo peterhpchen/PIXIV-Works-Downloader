@@ -33,16 +33,21 @@ $(document).ready(function() {
                 id : "box"
             }).append(
                 $('<img>', {
+                    title : "Close",
                     id : "boxClose",
                     class : "icon overlay boxController",
                     src : IconUrl.cross
                 })
             ).append(
-                $('<img>', {
-                    id : "boxDownload",
-                    class : "icon overlay boxController",
-                    src : IconUrl.download
-                })
+                $('<a>', {
+                    id : "boxDownloadLink"
+                }).append(
+                    $('<img>', {
+                        title : "Download",
+                        id : "boxDownload",
+                        class : "icon overlay boxController",
+                        src : IconUrl.download
+                    }))
             ).append(
                 $('<img>', {
                     id : "boxMultiDownload",
@@ -61,41 +66,45 @@ $(document).ready(function() {
                 })
             ).append(
                 $('<div>', {
-                    id : "boxLeft" 
+                    id : "boxLeft",
+                    class : "boxController" 
                 }).append(
                     $('<img>', {
                         id : "boxLeftIcon",
-                        class : "icon overlay boxController",
+                        class : "icon overlay",
                         src : IconUrl.left 
                     })
                 ) //end div#boxleft append
             ).append(
                 $('<div>', {
-                    id : "boxRight"
+                    id : "boxRight",
+                    class : "boxController"
                 }).append(
                     $('<img>', {
                         id : "boxRightIcon",
-                        class : "icon overlay boxController",
+                        class : "icon overlay",
                         src : IconUrl.right
                     })
                 ) //end div#boxleft append
             ).append(
                 $('<div>', {
-                    id : "boxUp" 
+                    id : "boxUp",
+                    class : "boxController multiPicture"
                 }).append(
                     $('<img>', {
                         id : "boxUpIcon",
-                        class : "icon overlay boxController",
+                        class : "icon overlay",
                         src : IconUrl.up
                     })
                 ) //end div#boxleft append
             ).append(
                 $('<div>', {
-                    id : "boxDown"
+                    id : "boxDown",
+                    class : "boxController multiPicture"
                 }).append(
                     $('<img>', {
                         id : "boxDownIcon",
-                        class : "icon overlay boxController",
+                        class : "icon overlay",
                         src : IconUrl.down
                     })
                 ) //end div#boxleft append
@@ -161,6 +170,17 @@ $(document).ready(function() {
        return results[1] || 0;
     }; //end urlParam
 
+    $.download = function() {
+        var $boxImg = $('#boxImg');
+        var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
+        var bigSrc = src.substring(0, src.lastIndexOf("_")) + ".png";
+
+        $('#boxDownloadLink').attr({
+            href : bigSrc,
+            download : ""
+        });
+    }; //end $.download
+
     getDetailByAjax = function(href) {
 
             //get medien picture by ajax
@@ -174,7 +194,7 @@ $(document).ready(function() {
                 var detailHref = $parsed.find('.works_display').children('a').attr('href');
                 var mode = urlParam(detailHref, "mode");
                 if(mode === "manga") {
-                    $('#boxDownIcon').css({display : "inline"});
+                    //$('#boxDownIcon').css({display : "inline"});
                 }
                 var medienSrc = $parsed.find('.works_display').children('a').children('img').attr('src');
                 //end parse web to get medien source
@@ -221,6 +241,10 @@ $(document).ready(function() {
                            }
                         },
                         complete : function() {
+                            $('#boxClose').css({display : "inline"});
+                            //$('#boxDownload').css({display : "inline"}).unbind().click($.download);
+$('#boxDownload').css({display : "inline"}).unbind();
+$.download();
                         }
                     }); //end box animate
                 }); //end #boxImg load
@@ -228,6 +252,46 @@ $(document).ready(function() {
             //end get medien picture by ajax
 
     }; //end getDetailByAjax
+
+    $.boxClose = function(event) {
+                var $box = event.data.box;
+                var thumbnailWidth= event.data.thumbnailWidth;
+                var thumbnailHeight = event.data.thumbnailHeight;
+                var initialBoxTop = event.data.initialBoxTop;
+                var initialBoxLeft = event.data.initialBoxLeft;
+                var $controller = $('.boxController');
+                var $boxShadow = $('#boxShadow');
+                $controller.css({display : "none"});
+                $box.delay(1).animate({
+                    'width' : thumbnailWidth,
+                    'height' : thumbnailHeight,
+                    'top' : initialBoxTop,
+                    'left' : initialBoxLeft 
+                }, {
+                    step : function(now, fx) {
+                        if(fx.prop === "width") {
+                            $('#boxImg').css({
+                                width : now
+                            });
+                        }
+                        if(fx.prop === "height") {
+                            $('#boxImg').css({
+                                height : now
+                            });
+                        }
+                    },
+                    complete : function() {
+                        $boxShadow.css("display", "none");
+                        $box.css({
+                            display : "none",
+                            width : "auto",
+                            height : "auto"
+                        });
+                        $('html').css({overflow : "auto"}); //enable scroll bar
+                        $('#boxImg').remove();
+                    }
+                }); //end box animate
+    }; //end $.boxClose
 
     setEnlargeEvent = function($enlarge, $thumbnail) {
 
@@ -284,43 +348,11 @@ $(document).ready(function() {
             });
             //end set box initial value
 
+            $('#boxClose').unbind().click({'box' : $box, 'thumbnailWidth' : thumbnailWidth, 'thumbnailHeight' : thumbnailHeight, 'initialBoxTop' : initialBoxTop, 'initialBoxLeft' : initialBoxLeft}, $.boxClose);
+
             //set boxshadow. When click boxShadow, disable box and boxShadow
             $boxShadow.css({display : "inline"}).unbind()
-            .click({'box' : $box, 'thumbnailTop' : thumbnailTop, 'thumbnailLeft' : thumbnailLeft}, function(event) {
-                var $box = event.data.box;
-                var thumbnailTop = event.data.thumbnailTop;
-                var thumbnailLeft = event.data.thumbnailLeft;
-                $('.boxController').css({display : "none"});
-                $box.animate({
-                    'width' : thumbnailWidth,
-                    'height' : thumbnailHeight,
-                    'top' : initialBoxTop,
-                    'left' : initialBoxLeft 
-                }, {
-                    step : function(now, fx) {
-                        if(fx.prop === "width") {
-                            $('#boxImg').css({
-                                width : now
-                            });
-                        }
-                        if(fx.prop === "height") {
-                            $('#boxImg').css({
-                                height : now
-                            });
-                        }
-                    },
-                    complete : function() {
-                        $boxShadow.css("display", "none");
-                        $box.css({
-                            display : "none",
-                            width : "auto",
-                            height : "auto"
-                        });
-                        $('html').css({overflow : "auto"}); //enable scroll bar
-                        $('#boxImg').remove();
-                    }
-                }); //end box animate
-            }); //end boxShadow click
+            .click({'box' : $box, 'thumbnailWidth' : thumbnailWidth, 'thumbnailHeight' : thumbnailHeight, 'initialBoxTop' : initialBoxTop, 'initialBoxLeft' : initialBoxLeft}, $.boxClose); //end boxShadow click
 
             //set boxLoading initial position
             var initialBoxLoadingLeft = $boxLoading.position().top + ($box.width() - $boxLoading.width())/2;
