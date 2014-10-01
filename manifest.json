@@ -29,12 +29,13 @@
         {
             "matches" : ["http://www.pixiv.net/*"],
             "css" : [ "extension.css" ],
-            "js" : [ "jquery-2.1.1.min.js", "extension.js" ]
+            "js" : [ "lib/jquery-2.1.1.min.js", "lib/jszip.min.js", "extension.js" ]
         }     
     ],
 	
     "web_accessible_resources" : [
-        "image/*" 
+        "image/*",
+        "lib/*"
     ]//,
 //    "permissions": [ "declarativeContent" ]
 }

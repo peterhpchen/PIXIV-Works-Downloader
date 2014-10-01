@@ -67,44 +67,44 @@ $(document).ready(function() {
             ).append(
                 $('<div>', {
                     id : "boxLeft",
-                    class : "boxController" 
+                    class : "" 
                 }).append(
                     $('<img>', {
                         id : "boxLeftIcon",
-                        class : "icon overlay",
+                        class : "icon overlay boxController",
                         src : IconUrl.left 
                     })
                 ) //end div#boxleft append
             ).append(
                 $('<div>', {
                     id : "boxRight",
-                    class : "boxController"
+                    class : ""
                 }).append(
                     $('<img>', {
                         id : "boxRightIcon",
-                        class : "icon overlay",
+                        class : "icon overlay boxController",
                         src : IconUrl.right
                     })
                 ) //end div#boxleft append
             ).append(
                 $('<div>', {
                     id : "boxUp",
-                    class : "boxController multiPicture"
+                    class : "multiPicture"
                 }).append(
                     $('<img>', {
                         id : "boxUpIcon",
-                        class : "icon overlay",
+                        class : "icon overlay boxController",
                         src : IconUrl.up
                     })
                 ) //end div#boxleft append
             ).append(
                 $('<div>', {
                     id : "boxDown",
-                    class : "boxController multiPicture"
+                    class : "multiPicture"
                 }).append(
                     $('<img>', {
                         id : "boxDownIcon",
-                        class : "icon overlay",
+                        class : "icon overlay boxController",
                         src : IconUrl.down
                     })
                 ) //end div#boxleft append
@@ -135,9 +135,10 @@ $(document).ready(function() {
 
     setThumbnail = function() {
          
+        var $layoutThumbnails = $('._layout-thumbnail'); //get div._layout-thumbnail (img.thumbnail 's parent)
         var $thumbnails = $("._thumbnail"); //get img._thumbnail (small picture)
 
-        $thumbnails.hover(
+        $layoutThumbnails.hover(
             function(event) {
                 var $this = $(this); //thumbnail
                 var $enlarge = $('#enlarge'); //enlargeIcon
@@ -170,16 +171,32 @@ $(document).ready(function() {
        return results[1] || 0;
     }; //end urlParam
 
-    $.download = function() {
+    $.download = function(mode) {
         var $boxImg = $('#boxImg');
         var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
         var bigSrc = src.substring(0, src.lastIndexOf("_")) + ".png";
 
+        if(mode === "manga") {
+            bigSrc = src.replace("_p", "_big_p");
+        }
         $('#boxDownloadLink').attr({
             href : bigSrc,
             download : ""
         });
     }; //end $.download
+
+    $.multiDownload = function() {
+        var $boxImg = $('#boxImg');
+        var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
+        bigSrc = src.replace("_p", "_big_p");
+        
+        $.get(bigSrc, function(data) {
+            console.log(bigSrc);
+        });
+    }; //end $.multiDownload
+
+    $.moveToNextPicture = function() {
+    }; //end moveToNextPicture
 
     getDetailByAjax = function(href) {
 
@@ -193,13 +210,14 @@ $(document).ready(function() {
                 var $parsed = $('<div>').append(data);
                 var detailHref = $parsed.find('.works_display').children('a').attr('href');
                 var mode = urlParam(detailHref, "mode");
+                var medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
                 if(mode === "manga") {
+                    medienSrc = medienSrc.replace("_m", "_p0");
+                    var results = new RegExp("(\\d+)").exec($parsed.find('.ui-expander-target').children('.meta').children('li:nth-child(2)')[0].innerText);
+                    var page = results[1];
                     //$('#boxDownIcon').css({display : "inline"});
                 }
-                var medienSrc = $parsed.find('.works_display').children('a').children('img').attr('src');
                 //end parse web to get medien source
-
-                var bigSrc = medienSrc.replace('_m', ''); //big picture source is medien source remove _m
 
                 var $boxImg = $('#boxImg');
                 
@@ -213,9 +231,24 @@ $(document).ready(function() {
                     medienPicture.src = $this.attr("src");
                     //end get initial picture size
 
+                    var maxWidth = window.innerWidth - 100;
+                    var maxHeight = window.innerHeight - 100;
+                    
+                    var ImgWidth = medienPicture.width;
+                    var ImgHeight = medienPicture.height;
+
+                    if(maxWidth < ImgWidth) {
+                        ImgHeight = ImgHeight*maxWidth/ImgWidth;
+                        ImgWidth = maxWidth;
+                    }
+                    if(maxHeight < ImgHeight) {
+                        ImgWidth = ImgWidth*maxHeight/ImgHeight;
+                        ImgHeight = maxHeight;
+                    }
+
                     //We have to get gap of size between thumbnail and medien picture
-                    var topOffsetFromBeforeToAfter = (medienPicture.height - $this.height())/2;
-                    var leftOffsetFromBeforeToAfter = (medienPicture.width - $this.width())/2;
+                    var topOffsetFromBeforeToAfter = (ImgHeight - $this.height())/2;
+                    var leftOffsetFromBeforeToAfter = (ImgWidth - $this.width())/2;
 
                     $boxLoading.css({
                         display : "none",
@@ -225,8 +258,8 @@ $(document).ready(function() {
                     $box.animate({
                         top : "-=" + topOffsetFromBeforeToAfter,
                         left : "-=" + leftOffsetFromBeforeToAfter,
-                        height : medienPicture.height,
-                        width : medienPicture.width
+                        height : ImgHeight,
+                        width : ImgWidth
                     }, {
                         step : function(now, fx) {
                            if(fx.prop === "height") {
@@ -243,8 +276,46 @@ $(document).ready(function() {
                         complete : function() {
                             $('#boxClose').css({display : "inline"});
                             //$('#boxDownload').css({display : "inline"}).unbind().click($.download);
-$('#boxDownload').css({display : "inline"}).unbind();
-$.download();
+                            $('#boxDownload').css({display : "inline"}).unbind();
+                            $.download(mode);
+                            $('#boxUp, #boxDown').unbind();
+
+                            if(mode === "manga") {
+                                $.multiDownload();
+                                $('#boxUp, #boxDown').css({display : "inline"}).hover(
+                                        function() {
+                                            $(this).children().css({display : "inline"});
+                                        },function() {
+                                            $(this).children().css({display : "none"});
+                                        }
+                                ).click({"page" : page}, function(event) {
+                                    var page = event.data.page;
+                                    var $boxImg = $('#boxImg');
+                                    var results = new RegExp("[p](\\d+)").exec($boxImg.attr("src"));
+                                    var currentPage = results[1];
+
+                                    var nextPage = currentPage;
+                                    if($(this).attr("id") === "boxUp") {
+                                        nextPage = currentPage - 1;
+                                        if(parseInt(currentPage) === 0) {
+                                            nextPage = page - 1;
+                                        }
+                                    } else if($(this).attr("id") === "boxDown") {
+                                        nextPage = parseInt(currentPage) + 1;
+                                        if(parseInt(nextPage) === parseInt(page)) {
+                                            nextPage = "0";
+                                        }
+                                    }
+
+                                    var medienSrc = $boxImg.attr("src").replace("p" + currentPage, "p" + nextPage);
+
+                                    $boxImg.css({display : "none"});
+                                    $boxImg.attr("src", medienSrc).load(function() {
+                                        $boxImg.css({display : "inline"});
+                                        $.download("manga");
+                                    });
+                                });
+                            }
                         }
                     }); //end box animate
                 }); //end #boxImg load
@@ -293,7 +364,7 @@ $.download();
                 }); //end box animate
     }; //end $.boxClose
 
-    setEnlargeEvent = function($enlarge, $thumbnail) {
+    setEnlargeEvent = function($enlarge, $layoutThumbnails) {
 
         $enlarge.hover(
             function() {
@@ -302,10 +373,10 @@ $.download();
             function() {
                 initialEnlarge($(this));
             }
-        ).click($thumbnail, function(event) {
+        ).click($layoutThumbnails, function(event) {
 
             var $this = $(this); //enlargeIcon
-            var $thumbnail = $(event.data); //thumbnail
+            var $thumbnail = $(event.data).children('._thumbnail'); //thumbnail
             var $box = $('#box'); //box
             var $boxContent = $('#boxContent'); //box content
             var $boxLoading = $('#boxLoading'); //box loading
