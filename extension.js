@@ -174,25 +174,103 @@ $(document).ready(function() {
     $.download = function(mode) {
         var $boxImg = $('#boxImg');
         var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
+        if(mode === "manga") {
+            if(src.indexOf("1200x1200") === -1) {
+                src = src.replace("_p", "_big_p");
+            }
+        }
+        src = src.replace("c/1200x1200/img-master/", "img-original/");
         var bigSrc = src.substring(0, src.lastIndexOf("_")) + ".png";
 
-        if(mode === "manga") {
-            bigSrc = src.replace("_p", "_big_p");
-        }
+                console.log(bigSrc);
         $('#boxDownloadLink').attr({
             href : bigSrc,
             download : ""
         });
     }; //end $.download
 
-    $.multiDownload = function() {
+    getBlobUrlFromPng = function(url) {
+        var req = new XMLHttpRequest();
+        req.open("GET", url, true);
+        req.responseType = "blob";
+
+        req.onload = function(event) {
+            var blob = req.response;
+            var url = URL.createObjectURL(blob);
+            var reader = new FileReader();
+            reader.addEventListener("loadend", function() {
+               // reader.result contains the contents of blob as a typed array
+            var zip = new JSZip();
+
+            zip.file("test.png", reader.result, {base64 : true});
+
+            var content = zip.generate({type : "blob"});
+
+            saveAs(content, "test.zip");
+
+            });
+            reader.readAsArrayBuffer(blob);
+
+        }; //end req.onload
+
+        req.send();
+    }; //end getBlobUrlFromPng
+
+    $.addImgToZip = function(zip, imgLink, number) {
+        var deferred = $.Deferred();
+
+        var req = new XMLHttpRequest();
+        req.open("GET", imgLink, true);
+        req.responseType = "blob";
+
+        req.onload = function(event) {
+            var blob = req.response;
+            var url = URL.createObjectURL(blob);
+            var reader = new FileReader();
+            reader.addEventListener("loadend", function() {
+               // reader.result contains the contents of blob as a typed array
+
+                zip.file("p" + number + ".png", reader.result, {base64 : true});
+                deferred.resolve(zip);
+            });
+            reader.readAsArrayBuffer(blob);
+
+        }; //end req.onload
+
+        req.send();
+
+        return deferred;
+    }; //end addImgToZip
+
+    generateZip = function(zip) {
+        var content = zip.generate({type : "blob"});
+
+        saveAs(content, "test.zip");
+
+    }; //end generateZip
+
+    $.multiDownload = function(page) {
         var $boxImg = $('#boxImg');
+        var results = new RegExp("[p](\\d+)").exec($boxImg.attr("src"));
+        var currentPage = results[1];
         var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
-        bigSrc = src.replace("_p", "_big_p");
+        bigSrc = src.replace("_p" + currentPage, "_big_p0");
         
-        $.get(bigSrc, function(data) {
-            console.log(bigSrc);
-        });
+        var imgLinks = [bigSrc];
+
+        for(var i = 1; i < parseInt(page); i++) {
+            imgLinks.push(bigSrc.replace("_p0", "_p" + i));
+        } //end if
+
+        var zip = new JSZip();
+        var deferreds = [];
+
+        for(var key in imgLinks) {
+            console.log(imgLinks[key]);
+            deferreds.push( $.addImgToZip(zip, imgLinks[key], key));
+        }
+
+        $.when.apply(null, deferreds).done(generateZip);
     }; //end $.multiDownload
 
     $.moveToNextPicture = function() {
@@ -212,7 +290,11 @@ $(document).ready(function() {
                 var mode = urlParam(detailHref, "mode");
                 var medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
                 if(mode === "manga") {
-                    medienSrc = medienSrc.replace("_m", "_p0");
+                    if(medienSrc.indexOf("600x600") === -1) {
+                        medienSrc = medienSrc.replace("_m", "_p0");
+                    } else {
+                        medienSrc = medienSrc.replace("600x600", "1200x1200");
+                    }
                     var results = new RegExp("(\\d+)").exec($parsed.find('.ui-expander-target').children('.meta').children('li:nth-child(2)')[0].innerText);
                     var page = results[1];
                     //$('#boxDownIcon').css({display : "inline"});
@@ -281,7 +363,9 @@ $(document).ready(function() {
                             $('#boxUp, #boxDown').unbind();
 
                             if(mode === "manga") {
-                                $.multiDownload();
+                                $("#boxMultiDownload").unbind().click(page, function(event) {
+                                    $.multiDownload(event.data);
+                                }).css({display : "inline"});
                                 $('#boxUp, #boxDown').css({display : "inline"}).hover(
                                         function() {
                                             $(this).children().css({display : "inline"});

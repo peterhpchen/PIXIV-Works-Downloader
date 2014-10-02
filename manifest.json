@@ -29,14 +29,14 @@
         {
             "matches" : ["http://www.pixiv.net/*"],
             "css" : [ "extension.css" ],
-            "js" : [ "lib/jquery-2.1.1.min.js", "lib/jszip.min.js", "extension.js" ]
+            "js" : [ "lib/jquery-2.1.1.min.js", "lib/FileSaver.min.js", "lib/jszip.min.js", "extension.js" ]
         }     
     ],
 	
     "web_accessible_resources" : [
         "image/*",
         "lib/*"
-    ]//,
-//    "permissions": [ "declarativeContent" ]
+    ],
+    "permissions": [ "http://*.pixiv.net/*" ]
 }
 
