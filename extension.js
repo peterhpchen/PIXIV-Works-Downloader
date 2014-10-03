@@ -180,7 +180,7 @@ $(document).ready(function() {
             }
         }
         src = src.replace("c/1200x1200/img-master/", "img-original/");
-        var bigSrc = src.substring(0, src.lastIndexOf("_")) + ".png";
+        var bigSrc = src.substring(0, src.lastIndexOf("_")) + src.substring(src.lastIndexOf("."));
 
                 console.log(bigSrc);
         $('#boxDownloadLink').attr({
@@ -225,6 +225,7 @@ $(document).ready(function() {
 
         req.onload = function(event) {
             var blob = req.response;
+            console.log(blob.type);
             var url = URL.createObjectURL(blob);
             var reader = new FileReader();
             reader.addEventListener("loadend", function() {
@@ -254,7 +255,14 @@ $(document).ready(function() {
         var results = new RegExp("[p](\\d+)").exec($boxImg.attr("src"));
         var currentPage = results[1];
         var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
-        bigSrc = src.replace("_p" + currentPage, "_big_p0");
+            if(src.indexOf("1200x1200") === -1) {
+                src = src.replace("_p", "_big_p");
+            }
+        src = src.replace("c/1200x1200/img-master/", "img-original/");
+        var bigSrc = src;
+        if(src.lastIndexOf("_m") !== -1) {
+            bigSrc = src.substring(0, src.lastIndexOf("_m")) + src.substring(src.lastIndexOf("."));
+        }
         
         var imgLinks = [bigSrc];
 
