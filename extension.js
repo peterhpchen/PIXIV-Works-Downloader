@@ -1,129 +1,160 @@
 $(document).ready(function() {
 
+    var iconUrl = {
+        enlarge : chrome.extension.getURL("image/enlarge.png"),
+        cross : chrome.extension.getURL("image/cross.png"),
+        loading : chrome.extension.getURL("image/loading.gif"),
+        download : chrome.extension.getURL("image/download.png"),
+        multiDownload : chrome.extension.getURL("image/multiDownload.png"),
+        up : chrome.extension.getURL("image/arrows/up.png"),
+        down : chrome.extension.getURL("image/arrows/down.png"),
+        left : chrome.extension.getURL("image/arrows/left.png"),
+        right : chrome.extension.getURL("image/arrows/right.png")
+    }; //end iconUrl
+
+    var $box = $("<div>", {
+        id : "box"
+    });
+
+    var $boxClose = $("<img>", {
+        title : "Close",
+        id : "boxClose",
+        class : "icon overlay boxController manga single ugoira",
+        src : iconUrl.cross
+    });
+
+    var $boxDownloadLink = $("<a>", {
+        id : "boxDownloadLink",
+        class : "manga single ugoira"
+    });
+
+    var $boxDownload = $("<img>", {
+        title : "Download",
+        id : "boxDownload",
+        class : "icon overlay boxController manga single ugoira",
+        src : iconUrl.download
+    });
+
+    var $boxMultiDownload = $("<img>", {
+        id : "boxMultiDownload",
+        class : "icon overlay boxController manga ugoira",
+        src : iconUrl.multiDownload
+    });
+
+    var $boxLoading = $("<img>", {
+        id : "boxLoading",
+        src : iconUrl.loading
+    });
+
+    var $boxTitle = $("<div>", {
+        id : "boxTitle",
+        class : "manga single ugoira"
+    });
+
+    var $boxLeft = $("<div>", {
+        id : "boxLeft",
+        class : "manga single ugoira"
+    });
+
+    var $boxLeftIcon = $("<img>", {
+        id : "boxLeftIcon",
+        class : "icon overlay boxController manga single ugoira",
+        src : iconUrl.left 
+    });
+
+    var $boxRight = $("<div>", {
+        id : "boxRight",
+        class : "manga single ugoira"
+    });
+
+    var $boxRightIcon = $("<img>", {
+        id : "boxRightIcon",
+        class : "icon overlay boxController manga single ugoira",
+        src : iconUrl.right
+    });
+
+    var $boxUp = $("<div>", {
+        id : "boxUp",
+        class : "multiPicture manga"
+    });
+
+    var $boxUpIcon = $("<img>", {
+        id : "boxUpIcon",
+        class : "icon overlay boxController manga",
+        src : iconUrl.up
+    });
+
+    var $boxDown = $("<div>", {
+        id : "boxDown",
+        class : "multiPicture manga"
+    });
+
+    var $boxDownIcon = $("<img>", {
+        id : "boxDownIcon",
+        class : "icon overlay boxController manga",
+        src : iconUrl.down
+    });
+
+    var $boxContent = $("<div>", {
+        id : "boxContent"
+    });
+
+    var $boxShadow = $("<div>", {
+        id : "boxShadow"
+    }).css({
+        height : window.innerHeight,
+        width : window.innerWidth,
+    });
+
+    var $enlarge = $("<img>", {
+        src : iconUrl.enlarge,
+        class : "overlay icon",
+        id : "enlarge",
+        title : "Enlarge"
+    });
+
     //function sets
 
-    setIconUrl = function() {
-
-        var enlargeIconUrl = chrome.extension.getURL("image/enlarge.png");
-        var crossIconUrl = chrome.extension.getURL("image/cross.png");
-        var loadingIconUrl = chrome.extension.getURL("image/loading.gif");
-        var downloadIconUrl = chrome.extension.getURL("image/download.png");
-        var multiDownloadIconUrl = chrome.extension.getURL("image/multiDownload.png");
-        var upIconUrl = chrome.extension.getURL("image/arrows/up.png");
-        var downIconUrl = chrome.extension.getURL("image/arrows/down.png");
-        var leftIconUrl = chrome.extension.getURL("image/arrows/left.png");
-        var rightIconUrl = chrome.extension.getURL("image/arrows/right.png");
-
-        return {
-            enlarge : enlargeIconUrl,
-            cross : crossIconUrl,
-            loading : loadingIconUrl,
-            download : downloadIconUrl,
-            multiDownload : multiDownloadIconUrl,
-            up : upIconUrl,
-            down : downIconUrl,
-            left : leftIconUrl,
-            right : rightIconUrl
-        };
-    }; //end setIconUrl
-
-    setBox = function(IconUrl) {
-        $('body').append(
-            $('<div>', {
-                id : "box"
-            }).append(
-                $('<img>', {
-                    title : "Close",
-                    id : "boxClose",
-                    class : "icon overlay boxController",
-                    src : IconUrl.cross
-                })
+    setBox = function() {
+        $("body").append( 
+            $box.append(
+                $boxClose
             ).append(
-                $('<a>', {
-                    id : "boxDownloadLink"
-                }).append(
-                    $('<img>', {
-                        title : "Download",
-                        id : "boxDownload",
-                        class : "icon overlay boxController",
-                        src : IconUrl.download
-                    }))
+                $boxDownloadLink.append(
+                    $boxDownload
+                )
             ).append(
-                $('<img>', {
-                    id : "boxMultiDownload",
-                    class : "icon overlay boxController",
-                    src : IconUrl.multiDownload
-                })
+                $boxMultiDownload
             ).append(
-                $('<img>', {
-                    id : "boxLoading",
-                    class : "icon",
-                    src : IconUrl.loading
-                })
+                $boxLoading
             ).append(
-                $('<div>', {
-                    id : "boxTitle"
-                })
+                $boxTitle
             ).append(
-                $('<div>', {
-                    id : "boxLeft",
-                    class : "" 
-                }).append(
-                    $('<img>', {
-                        id : "boxLeftIcon",
-                        class : "icon overlay boxController",
-                        src : IconUrl.left 
-                    })
+                $boxLeft.append(
+                    $boxLeftIcon
                 ) //end div#boxleft append
             ).append(
-                $('<div>', {
-                    id : "boxRight",
-                    class : ""
-                }).append(
-                    $('<img>', {
-                        id : "boxRightIcon",
-                        class : "icon overlay boxController",
-                        src : IconUrl.right
-                    })
+                $boxRight.append(
+                    $boxRightIcon
                 ) //end div#boxleft append
             ).append(
-                $('<div>', {
-                    id : "boxUp",
-                    class : "multiPicture"
-                }).append(
-                    $('<img>', {
-                        id : "boxUpIcon",
-                        class : "icon overlay boxController",
-                        src : IconUrl.up
-                    })
+                $boxUp.append(
+                    $boxUpIcon
                 ) //end div#boxleft append
             ).append(
-                $('<div>', {
-                    id : "boxDown",
-                    class : "multiPicture"
-                }).append(
-                    $('<img>', {
-                        id : "boxDownIcon",
-                        class : "icon overlay boxController",
-                        src : IconUrl.down
-                    })
+                $boxDown.append(
+                    $boxDownIcon
                 ) //end div#boxleft append
             ).append(
-                $('<div>', {
-                    id : "boxContent"
-                })
+                $boxContent
             ) //end div#box append
-        ); //end body append box
-
-        $('body').append(
-            $('<div>')
-                .attr('id', 'boxShadow')
-                .css({
-                    'height' : window.innerHeight,
-                    'width' : window.innerWidth,
-                })
-        ); //end body append boxShadow
-
+        ) //end body append box
+        .append(
+            $boxShadow
+        ) //end body append boxShadow
+        .append(
+            $enlarge
+        ); //end body append enlarge
     }; //end setBox
 
     initialEnlarge = function($enlarge) {
@@ -135,30 +166,37 @@ $(document).ready(function() {
 
     setThumbnail = function() {
          
-        var $layoutThumbnails = $('._layout-thumbnail'); //get div._layout-thumbnail (img.thumbnail 's parent)
+        var $layoutThumbnails = $("._layout-thumbnail"); //get div._layout-thumbnail (img.thumbnail 's parent)
         var $thumbnails = $("._thumbnail"); //get img._thumbnail (small picture)
 
         $layoutThumbnails.hover(
             function(event) {
                 var $this = $(this); //thumbnail
-                var $enlarge = $('#enlarge'); //enlargeIcon
-                var offsetOfThumbnail = $this.offset(); //absolute position
+
+                var nextHref = $this.closest("li").next(".image-item").children(".work").attr("href");
+                var prevHref = $this.closest("li").prev(".image-item").children(".work").attr("href");
+                var detailHref = $this.closest('a').attr('href'); //picture link
 
                 //width() : element
                 //outerWidth() : (border + padding)*2 + element
                 //outerWidth(true) : (margin + border + padding)*2 + element
+                var offsetOfThumbnail = $this.offset(); //absolute position
                 var enlargeTop = offsetOfThumbnail.top;
                 var enlargeLeft = offsetOfThumbnail.left + $this.outerWidth() - $enlarge.outerWidth(true);
-                $('#enlarge').css({
+                $enlarge.css({
                     "display" : "inline",
                     "top" : enlargeTop,
                     "left" : enlargeLeft
+                }).attr({
+                    "data-previd" : urlParam(prevHref, "illust_id"),
+                    "data-currentid" : urlParam(detailHref, "illust_id"),
+                    "data-nextid" : urlParam(nextHref, "illust_id")
                 });
 
                 setEnlargeEvent($enlarge, $this);
             },
             function() {
-                $enlarge = $('#enlarge');
+                $enlarge = $("#enlarge");
                 //if mouse on #enlarge, don't remove #enlarge
                 if(!$enlarge.is(":hover")) {
                     initialEnlarge($enlarge);
@@ -172,7 +210,7 @@ $(document).ready(function() {
     }; //end urlParam
 
     $.download = function(mode) {
-        var $boxImg = $('#boxImg');
+        var $boxImg = $("#boxImg");
         var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
         if(mode === "manga") {
             if(src.indexOf("1200x1200") === -1) {
@@ -183,7 +221,7 @@ $(document).ready(function() {
         var bigSrc = src.substring(0, src.lastIndexOf("_")) + src.substring(src.lastIndexOf("."));
 
                 console.log(bigSrc);
-        $('#boxDownloadLink').attr({
+        $boxDownloadLink.attr({
             href : bigSrc,
             download : ""
         });
@@ -251,7 +289,7 @@ $(document).ready(function() {
     }; //end generateZip
 
     $.multiDownload = function(page) {
-        var $boxImg = $('#boxImg');
+        var $boxImg = $("#oxImg");
         var results = new RegExp("[p](\\d+)").exec($boxImg.attr("src"));
         var currentPage = results[1];
         var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
@@ -289,11 +327,8 @@ $(document).ready(function() {
             //get medien picture by ajax
             $.get(href, function(data) {
 
-                var $boxLoading = $('#boxLoading');
-                var $box = $('#box');
-
                 //parse web to get medien source
-                var $parsed = $('<div>').append(data);
+                var $parsed = $("<div>").append(data);
                 var detailHref = $parsed.find('.works_display').children('a').attr('href');
                 var mode = urlParam(detailHref, "mode");
                 var medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
@@ -305,11 +340,11 @@ $(document).ready(function() {
                     }
                     var results = new RegExp("(\\d+)").exec($parsed.find('.ui-expander-target').children('.meta').children('li:nth-child(2)')[0].innerText);
                     var page = results[1];
-                    //$('#boxDownIcon').css({display : "inline"});
+                    //$("#boxDownIcon").css({display : "inline"});
                 }
                 //end parse web to get medien source
 
-                var $boxImg = $('#boxImg');
+                var $boxImg = $("#boxImg");
                 
                 //when #boxImg's src change, change top, left, height and width
                 $boxImg.attr('src', medienSrc).load(function() {
@@ -364,14 +399,14 @@ $(document).ready(function() {
                            }
                         },
                         complete : function() {
-                            $('#boxClose').css({display : "inline"});
+                            $boxClose.css({display : "inline"});
                             //$('#boxDownload').css({display : "inline"}).unbind().click($.download);
-                            $('#boxDownload').css({display : "inline"}).unbind();
+                            $boxDownload.css({display : "inline"}).unbind();
                             $.download(mode);
                             $('#boxUp, #boxDown').unbind();
 
                             if(mode === "manga") {
-                                $("#boxMultiDownload").unbind().click(page, function(event) {
+                                $boxMultiDownload.unbind().click(page, function(event) {
                                     $.multiDownload(event.data);
                                 }).css({display : "inline"});
                                 $('#boxUp, #boxDown').css({display : "inline"}).hover(
@@ -422,8 +457,7 @@ $(document).ready(function() {
                 var thumbnailHeight = event.data.thumbnailHeight;
                 var initialBoxTop = event.data.initialBoxTop;
                 var initialBoxLeft = event.data.initialBoxLeft;
-                var $controller = $('.boxController');
-                var $boxShadow = $('#boxShadow');
+                var $controller = $(".boxController");
                 $controller.css({display : "none"});
                 $box.delay(1).animate({
                     'width' : thumbnailWidth,
@@ -433,12 +467,12 @@ $(document).ready(function() {
                 }, {
                     step : function(now, fx) {
                         if(fx.prop === "width") {
-                            $('#boxImg').css({
+                            $("#boxImg").css({
                                 width : now
                             });
                         }
                         if(fx.prop === "height") {
-                            $('#boxImg').css({
+                            $("#boxImg").css({
                                 height : now
                             });
                         }
@@ -450,8 +484,8 @@ $(document).ready(function() {
                             width : "auto",
                             height : "auto"
                         });
-                        $('html').css({overflow : "auto"}); //enable scroll bar
-                        $('#boxImg').remove();
+                        $("html").css({overflow : "auto"}); //enable scroll bar
+                        $("#boxImg").remove();
                     }
                 }); //end box animate
     }; //end $.boxClose
@@ -469,10 +503,6 @@ $(document).ready(function() {
 
             var $this = $(this); //enlargeIcon
             var $thumbnail = $(event.data).children('._thumbnail'); //thumbnail
-            var $box = $('#box'); //box
-            var $boxContent = $('#boxContent'); //box content
-            var $boxLoading = $('#boxLoading'); //box loading
-            var $boxShadow = $('#boxShadow'); //box shadow
 
             var href = $thumbnail.closest('a').attr('href'); //picture link
 
@@ -483,11 +513,11 @@ $(document).ready(function() {
             var thumbnailHeight = $thumbnail.height();
             //end get thumbnail coordinate, width and height
 
-            $('html').css({overflow : "hidden"}); //disable scroll bar
+            $("html").css({overflow : "hidden"}); //disable scroll bar
 
             //set thumbnail for box
             $boxContent
-                .append($('<img>', {
+                .append($("<img>", {
                     id : "boxImg",
                     src : $thumbnail.attr('src')
                 }).css({
@@ -498,7 +528,7 @@ $(document).ready(function() {
 
             getDetailByAjax(href);
 
-            $('.boxController').css({display : 'none'}); //button display none
+            $(".boxController").css({display : 'none'}); //button display none
 
             //set box initial value
             var initialBoxLeft = thumbnailLeft - ($box.outerWidth(true) - $box.width())/2 + ($thumbnail.outerWidth() - thumbnailWidth)/2;
@@ -511,7 +541,7 @@ $(document).ready(function() {
             });
             //end set box initial value
 
-            $('#boxClose').unbind().click({'box' : $box, 'thumbnailWidth' : thumbnailWidth, 'thumbnailHeight' : thumbnailHeight, 'initialBoxTop' : initialBoxTop, 'initialBoxLeft' : initialBoxLeft}, $.boxClose);
+            $boxClose.unbind().click({'box' : $box, 'thumbnailWidth' : thumbnailWidth, 'thumbnailHeight' : thumbnailHeight, 'initialBoxTop' : initialBoxTop, 'initialBoxLeft' : initialBoxLeft}, $.boxClose);
 
             //set boxshadow. When click boxShadow, disable box and boxShadow
             $boxShadow.css({display : "inline"}).unbind()
@@ -542,7 +572,7 @@ $(document).ready(function() {
     };
 
     setEnlarge = function(IconUrl) {
-        $('body').append(
+        $("body").append(
             $("<img>", {
                 src : IconUrl.enlarge,
                 class : "overlay icon",
@@ -555,19 +585,15 @@ $(document).ready(function() {
 
     //end function sets
     
-    var IconUrl = setIconUrl();
-    setBox(IconUrl);
-    setEnlarge(IconUrl);
+    setBox();
     setThumbnail();
 
     $(window).resize(function() {
-        var $boxShadow = $('#boxShadow');
         $boxShadow.css({
             width : window.innerWidth,
             height : window.innerHeight
         });
 
-        var $box = $('#box');
         $box.css({
             top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
             left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2

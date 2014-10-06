@@ -30,6 +30,7 @@
 
 #boxImg {
 }
+
 #boxClose, #boxDownload, #boxMultiDownload {
     top : -15px;
 }
@@ -107,6 +108,12 @@
     position : absolute;
     display : block;
     z-index : 20000;
+    background-color : rgba(0,0,0,0);
+    width : 30px;
+    height : auto;
+    margin : 0;
+    border : 0;
+    padding : 0;
 }
 
 #boxShadow {
