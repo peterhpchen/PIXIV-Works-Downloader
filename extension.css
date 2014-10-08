@@ -48,6 +48,13 @@
     right : 45px;
 }
 
+#boxUpIcon, #boxDownIcon, #boxLeftIcon, #boxRightIcon {
+    opacity : 1.0;
+}
+
+#boxUp:hover, #boxDown:hover, #boxLeft:hover, #boxRight:hover{
+    cursor : pointer;
+}
 #boxUp, #boxDown {
     position : absolute;
     width : 30%;

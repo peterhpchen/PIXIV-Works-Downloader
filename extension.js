@@ -23,10 +23,10 @@ $(document).ready(function() {
         src : iconUrl.cross
     });
 
-    var $boxDownloadLink = $("<a>", {
-        id : "boxDownloadLink",
-        class : "manga big ugoira"
-    });
+//    var $boxDownloadLink = $("<a>", {
+//        id : "boxDownloadLink",
+//        class : "manga big ugoira"
+//    });
 
     var $boxDownload = $("<img>", {
         title : "Download",
@@ -54,45 +54,45 @@ $(document).ready(function() {
 
     var $boxLeft = $("<div>", {
         id : "boxLeft",
-        class : "manga big ugoira boxController"
+        class : "arrow manga big ugoira boxController"
     });
 
     var $boxLeftIcon = $("<img>", {
         id : "boxLeftIcon",
-        class : "icon overlay manga big ugoira",
+        class : "arrowIcon icon overlay manga big ugoira",
         src : iconUrl.left 
     });
 
     var $boxRight = $("<div>", {
         id : "boxRight",
-        class : "manga big ugoira boxController"
+        class : "arrow manga big ugoira boxController"
     });
 
     var $boxRightIcon = $("<img>", {
         id : "boxRightIcon",
-        class : "icon overlay manga big ugoira",
+        class : "arrowIcon icon overlay manga big ugoira",
         src : iconUrl.right
     });
 
     var $boxUp = $("<div>", {
         id : "boxUp",
-        class : "multiPicture boxController manga"
+        class : "arrow multiPicture boxController manga"
     });
 
     var $boxUpIcon = $("<img>", {
         id : "boxUpIcon",
-        class : "icon overlay manga",
+        class : "arrowIcon icon overlay manga",
         src : iconUrl.up
     });
 
     var $boxDown = $("<div>", {
         id : "boxDown",
-        class : "multiPicture boxController manga"
+        class : "arrow multiPicture boxController manga"
     });
 
     var $boxDownIcon = $("<img>", {
         id : "boxDownIcon",
-        class : "icon overlay manga",
+        class : "arrowIcon icon overlay manga",
         src : iconUrl.down
     });
 
@@ -121,9 +121,7 @@ $(document).ready(function() {
             $box.append(
                 $boxClose
             ).append(
-                $boxDownloadLink.append(
-                    $boxDownload
-                )
+                $boxDownload
             ).append(
                 $boxMultiDownload
             ).append(
@@ -199,7 +197,11 @@ $(document).ready(function() {
 
     urlParam = function(url, name) {
         var results = new RegExp('[?&]' + name + '=([^&#]*)').exec(url);
-       return results[1] || 0;
+        if(results === null) {
+            return null;
+        } else {
+            return results[1];
+        }
     }; //end urlParam
 
     setIllustId = function() {
@@ -211,45 +213,47 @@ $(document).ready(function() {
         return illustIdList;
     }; //end setIllustId
 
-    $.download = function(mode) {
-        var $boxImg = $("#boxImg");
-        var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
-        if(mode === "manga") {
+    getBigSrc = function(src, mode) {
+        var bigSrc = "";
+        if(mode === "big") {
+            if(src.indexOf("600x600") === -1) {
+                bigSrc = src.replace("_m", ""); //older type
+            } else {
+                //newer type
+                bigSrc = src.replace("c/600x600/img-master/", "img-original/");
+                bigSrc = bigSrc.replace("_master1200", "");
+            }
+        } else if(mode === "manga") {
             if(src.indexOf("1200x1200") === -1) {
-                src = src.replace("_p", "_big_p");
+                bigSrc = src.replace("_p", "_big_p"); //older type
+            } else {
+                //newer type
+                bigSrc = src.replace("c/1200x1200/img-master/", "img-original/");
+                bigSrc = bigSrc.replace("_master1200", "");
             }
         }
-        src = src.replace("c/1200x1200/img-master/", "img-original/");
-        var bigSrc = src.substring(0, src.lastIndexOf("_")) + src.substring(src.lastIndexOf("."));
+        return bigSrc;
+    }; //end getBigSrc
 
-        $boxDownloadLink.attr({
-            href : bigSrc,
-            download : ""
-        });
+    $.download = function() {
+        var mode = $boxContent.attr("data-mode");
+        var $boxImg = $("#boxImg");
+        var src = $boxImg.attr("src");
+
+        var bigSrc = getBigSrc(src, mode);
+        getBlobAndDownlaod(bigSrc);
+
     }; //end $.download
 
-    getBlobUrlFromPng = function(url) {
+    getBlobAndDownlaod = function(url) {
         var req = new XMLHttpRequest();
         req.open("GET", url, true);
         req.responseType = "blob";
 
         req.onload = function(event) {
             var blob = req.response;
-            var url = URL.createObjectURL(blob);
-            var reader = new FileReader();
-            reader.addEventListener("loadend", function() {
-               // reader.result contains the contents of blob as a typed array
-            var zip = new JSZip();
-
-            zip.file("test.png", reader.result, {base64 : true});
-
-            var content = zip.generate({type : "blob"});
-
-            saveAs(content, "test.zip");
-
-            });
-            reader.readAsArrayBuffer(blob);
-
+            var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
+            saveAs(blob, "test." + dataType);
         }; //end req.onload
 
         req.send();
@@ -264,13 +268,13 @@ $(document).ready(function() {
 
         req.onload = function(event) {
             var blob = req.response;
-            console.log(blob.type);
+            var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
             var url = URL.createObjectURL(blob);
             var reader = new FileReader();
             reader.addEventListener("loadend", function() {
                // reader.result contains the contents of blob as a typed array
 
-                zip.file("p" + number + ".png", reader.result, {base64 : true});
+                zip.file("p" + number + "." + dataType, reader.result, {base64 : true});
                 deferred.resolve(zip);
             });
             reader.readAsArrayBuffer(blob);
@@ -289,20 +293,15 @@ $(document).ready(function() {
 
     }; //end generateZip
 
-    $.multiDownload = function(page) {
-        var $boxImg = $("#oxImg");
-        var results = new RegExp("[p](\\d+)").exec($boxImg.attr("src"));
-        var currentPage = results[1];
-        var src = $boxImg.attr("src").replace("c/600x600/img-master/", "img-original/");
-            if(src.indexOf("1200x1200") === -1) {
-                src = src.replace("_p", "_big_p");
-            }
-        src = src.replace("c/1200x1200/img-master/", "img-original/");
-        var bigSrc = src;
-        if(src.lastIndexOf("_m") !== -1) {
-            bigSrc = src.substring(0, src.lastIndexOf("_m")) + src.substring(src.lastIndexOf("."));
-        }
-        
+    $.multiDownload = function() {
+        var currentPage = $boxContent.attr("data-page");
+        var page = $boxContent.attr("data-allpage");
+        var $boxImg = $("#boxImg");
+        var src = $boxImg.attr("src");
+
+        var bigSrc = getBigSrc(src, "manga");
+        bigSrc = bigSrc.replace("_p" + currentPage, "_p0");
+
         var imgLinks = [bigSrc];
 
         for(var i = 1; i < parseInt(page); i++) {
@@ -313,7 +312,6 @@ $(document).ready(function() {
         var deferreds = [];
 
         for(var key in imgLinks) {
-            console.log(imgLinks[key]);
             deferreds.push( $.addImgToZip(zip, imgLinks[key], key));
         }
 
@@ -321,9 +319,12 @@ $(document).ready(function() {
     }; //end $.multiDownload
 
     boxResize = function() {
-
-        $(".boxController").css({display : "none"});
-        $(".boxDashboard").css({display : "none"});
+        var nowNum = $boxContent.attr("data-now");
+        var $thumbnail = $("._layout-thumbnail[data-count=" + nowNum + "]").children(); //thumbnail
+        var $this = $(this);
+        if($thumbnail.attr("src") === $this.attr("src")) {
+            return false;
+        }
 
         //get initial picture size
         var medienPicture = new Image();
@@ -345,6 +346,38 @@ $(document).ready(function() {
             ImgHeight = maxHeight;
         }
 
+        //We have to get gap of size between thumbnail and medien picture
+        var topOffsetFromBeforeToAfter = (ImgHeight - $this.height())/2;
+        var leftOffsetFromBeforeToAfter = (ImgWidth - $this.width())/2;
+
+        $boxLoading.css({
+            display : "none",
+        }); //boxLoading icon disable
+
+        //animate box and boxImg
+        $box.animate({
+            top : "-=" + topOffsetFromBeforeToAfter,
+            left : "-=" + leftOffsetFromBeforeToAfter,
+            height : ImgHeight,
+            width : ImgWidth
+        }, {
+            step : function(now, fx) {
+               if(fx.prop === "height") {
+                   $this.css({
+                        height : now
+                   });
+               }
+               if(fx.prop === "width") {
+                   $this.css({
+                        width : now
+                   });
+               }
+            },
+            complete : function() {
+                $("." + $boxContent.attr("data-mode")).css("display", "inline");
+                $(".arrowIcon").css("display", "none");
+            }
+        });
     }; //end boxResize
 
     getPageNum = function(current, page, method) {
@@ -365,12 +398,13 @@ $(document).ready(function() {
         return num; 
     }; //end getPageNum
     
-    setBoxDashboardAndController = function() {
+    setBoxDashboardAndController = function(data) {
         
         //parse web to get medien source
         var $parsed = $("<div>").append(data);
         var detailHref = $parsed.find('.works_display').children('a').attr('href');
         var mode = urlParam(detailHref, "mode");
+        $boxContent.attr("data-mode", mode);
         var medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
 
         if(mode === "big") {
@@ -382,144 +416,50 @@ $(document).ready(function() {
             }
             var results = new RegExp("(\\d+)").exec($parsed.find('.ui-expander-target').children('.meta').children('li:nth-child(2)')[0].innerText);
             var page = results[1];
-            $boxUp.attr("data-page", getPageNum(0, page, 0));
-            $boxDown.attr("data-page", getPageNum(0, page, 1));
-
-            $.download(mode);
+            $boxContent.attr({
+                "data-page" : 0,
+                "data-allpage" : page
+            });
+        } else if(mode === null) {
+            console.log("ugoira");
+            console.log($parsed.find("#wrapper").children("script")[0].innerText);
         }
+
+        var $boxImg = $("#boxImg");
+
+        $boxImg.attr("src", medienSrc);
     }; //end setBoxDashBoardAndController
 
     mangaPage = function() {
-
+        $(".boxDashboard").css("display", "none");
+        $(".boxController").css("display", "none");
+        initialBoxLoading();
+        var $this = $(this);
+        var $boxImg = $("#boxImg");
+        var nowSrc = $boxImg.attr("src");
+        var nowPage = $boxContent.attr("data-page");
+        var allPage = $boxContent.attr("data-allpage");
+        var newPage = 0;
+        if($this.attr("id") === "boxUp") {
+            newPage = getPageNum(nowPage, allPage, 0);
+        } else {
+            newPage = getPageNum(nowPage, allPage, 1);
+        }
+        var newSrc = nowSrc.replace("_p" + nowPage, "_p" + newPage);
+        $boxImg.attr("src", newSrc);
+        $boxContent.attr("data-page", newPage);
     }; //end mangaPageEvent
+
+    setPageMangaEvent = function() {
+        $boxUp.click(mangaPage);
+        $boxDown.click(mangaPage);
+    }; //end setPageManga
+
     getDetailByAjax = function(href) {
 
             //get medien picture by ajax
             $.get(href, function(data) {
-
-                //parse web to get medien source
-                var $parsed = $("<div>").append(data);
-                var detailHref = $parsed.find('.works_display').children('a').attr('href');
-                var mode = urlParam(detailHref, "mode");
-                var medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
-                if(mode === "manga") {
-                    if(medienSrc.indexOf("600x600") === -1) {
-                        medienSrc = medienSrc.replace("_m", "_p0");
-                    } else {
-                        medienSrc = medienSrc.replace("600x600", "1200x1200");
-                    }
-                    var results = new RegExp("(\\d+)").exec($parsed.find('.ui-expander-target').children('.meta').children('li:nth-child(2)')[0].innerText);
-                    var page = results[1];
-            $boxUp.attr("data-page", getPageNum(0, page, 0));
-            $boxDown.attr("data-page", getPageNum(0, page, 1));
-                }
-                //end parse web to get medien source
-
-                var $boxImg = $("#boxImg");
-                
-                //when #boxImg's src change, change top, left, height and width
-                $boxImg.attr('src', medienSrc).unbind().load(function() {
-
-                    $this = $(this); //boxImg
-
-                    $(".boxController").css({display : "none"});
-                    $(".boxDashboard").css({display : "none"});
-
-                    //get initial picture size
-                    var medienPicture = new Image();
-                    medienPicture.src = $this.attr("src");
-                    //end get initial picture size
-
-                    var maxWidth = window.innerWidth - 100;
-                    var maxHeight = window.innerHeight - 100;
-                    
-                    var ImgWidth = medienPicture.width;
-                    var ImgHeight = medienPicture.height;
-
-                    if(maxWidth < ImgWidth) {
-                        ImgHeight = ImgHeight*maxWidth/ImgWidth;
-                        ImgWidth = maxWidth;
-                    }
-                    if(maxHeight < ImgHeight) {
-                        ImgWidth = ImgWidth*maxHeight/ImgHeight;
-                        ImgHeight = maxHeight;
-                    }
-
-                    //We have to get gap of size between thumbnail and medien picture
-                    var topOffsetFromBeforeToAfter = (ImgHeight - $this.height())/2;
-                    var leftOffsetFromBeforeToAfter = (ImgWidth - $this.width())/2;
-
-                    $boxLoading.css({
-                        display : "none",
-                    }); //boxLoading icon disable
-
-                    //animate box and boxImg
-                    $box.animate({
-                        top : "-=" + topOffsetFromBeforeToAfter,
-                        left : "-=" + leftOffsetFromBeforeToAfter,
-                        height : ImgHeight,
-                        width : ImgWidth
-                    }, {
-                        step : function(now, fx) {
-                           if(fx.prop === "height") {
-                               $boxImg.css({
-                                    height : now
-                               });
-                           }
-                           if(fx.prop === "width") {
-                               $boxImg.css({
-                                    width : now
-                               });
-                           }
-                        },
-                        complete : function() {
-                            $("." + mode).css({display : "inline"});
-                            //$('#boxDownload').css({display : "inline"}).unbind().click($.download);
-                            $boxDownload/*.css({display : "inline"})*/.unbind();
-                            $.download(mode);
-                            $('#boxUp, #boxDown').unbind();
-
-                            if(mode === "manga") {
-                                $boxMultiDownload.unbind().click(page, function(event) {
-                                    $.multiDownload(event.data);
-                                }).css({display : "inline"});
-                                $('#boxUp, #boxDown').css({display : "inline"}).hover(
-                                        function() {
-                                            $(this).children().css({display : "inline"});
-                                        },function() {
-                                            $(this).children().css({display : "none"});
-                                        }
-                                ).click({"page" : page}, function(event) {
-                                    var page = event.data.page;
-                                    var $boxImg = $('#boxImg');
-                                    var results = new RegExp("[p](\\d+)").exec($boxImg.attr("src"));
-                                    var currentPage = results[1];
-
-                                    var nextPage = currentPage;
-                                    if($(this).attr("id") === "boxUp") {
-                                        nextPage = currentPage - 1;
-                                        if(parseInt(currentPage) === 0) {
-                                            nextPage = page - 1;
-                                        }
-                                    } else if($(this).attr("id") === "boxDown") {
-                                        nextPage = parseInt(currentPage) + 1;
-                                        if(parseInt(nextPage) === parseInt(page)) {
-                                            nextPage = "0";
-                                        }
-                                    }
-
-                                    var medienSrc = $boxImg.attr("src").replace("p" + currentPage, "p" + nextPage);
-
-                                    $boxImg.css({display : "none"});
-                                    $boxImg.attr("src", medienSrc).load(function() {
-                                        $boxImg.css({display : "inline"});
-                                        $.download("manga");
-                                    });
-                                });
-                            }
-                        }
-                    }); //end box animate
-                }); //end #boxImg load
+                setBoxDashboardAndController(data);
             });
             //end get medien picture by ajax
 
@@ -596,7 +536,7 @@ $(document).ready(function() {
             }).css({
                 "height" : $thumbnail.height(),
                 "width" : $thumbnail.width()
-            }));
+            }).load(boxResize));
         //end set thumbnail for box
 
         var initialBoxPosition = getInitialBoxPosition($thumbnail);
@@ -673,6 +613,8 @@ $(document).ready(function() {
     }; //end setEnlarge
 
     pageBox = function() {
+        $(".boxController").css("display", "none");
+        $(".boxDashboard").css("display", "none");
         $this = $(this);
         if($this.attr("id") === "boxRight") {
             $boxContent.attr("data-now", getPageNum($boxContent.attr("data-now"), illustIdList.length, 1));
@@ -690,6 +632,21 @@ $(document).ready(function() {
         $boxRight.click(pageBox);
     }; //end setBoxPageEvent
 
+    setArrowsEvent = function() {
+        $(".arrow").hover(
+            function() {
+                $this = $(this);
+                $("#" + $this.attr("id") + "Icon").css("display", "inline");
+            }, function() {
+                $this = $(this);
+                $("#" + $this.attr("id") + "Icon").css("display", "none");
+        });
+    }; //end setArrowsEvent
+
+    setDownloadEvent = function() {
+        $boxDownload.click($.download);
+        $boxMultiDownload.click($.multiDownload);
+    };
     //end function sets
     
     var illustIdList = setIllustId();
@@ -698,6 +655,9 @@ $(document).ready(function() {
     setEnlargeEvent();
     setBoxCloseEvent();
     setBoxPageEvent();
+    setPageMangaEvent();
+    setArrowsEvent();
+    setDownloadEvent();
 
     $(window).resize(function() {
         $boxShadow.css({
