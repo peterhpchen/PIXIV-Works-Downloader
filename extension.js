@@ -269,7 +269,7 @@ $(document).ready(function() {
         req.onload = function(event) {
             var blob = req.response;
             var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-            var url = URL.createObjectURL(blob);
+            //var url = URL.createObjectURL(blob);
             var reader = new FileReader();
             reader.addEventListener("loadend", function() {
                // reader.result contains the contents of blob as a typed array
@@ -398,11 +398,22 @@ $(document).ready(function() {
         return num; 
     }; //end getPageNum
     
+    getJsonFromScript = function(script, name) {
+        var data = script.replace(/\s+/g, "");
+        var results = new RegExp(name + "=({[^;]*)").exec(data);
+        if(results === null) {
+            return null;
+        } else {
+            return results[1];
+        }
+    }; //end getJsonFromScript
+
     setBoxDashboardAndController = function(data) {
         
         //parse web to get medien source
         var $parsed = $("<div>").append(data);
-        var detailHref = $parsed.find('.works_display').children('a').attr('href');
+        var $aElement = $parsed.find('.works_display').find('a');
+        var detailHref = $aElement[$aElement.length - 1].href;
         var mode = urlParam(detailHref, "mode");
         $boxContent.attr("data-mode", mode);
         var medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
@@ -414,15 +425,42 @@ $(document).ready(function() {
             } else {
                 medienSrc = medienSrc.replace("600x600", "1200x1200");
             }
-            var results = new RegExp("(\\d+)").exec($parsed.find('.ui-expander-target').children('.meta').children('li:nth-child(2)')[0].innerText);
+            var results = new RegExp("(\\d+)").exec($parsed.find('.work-info').find('.meta').children('li:nth-child(2)')[0].innerText);
             var page = results[1];
             $boxContent.attr({
                 "data-page" : 0,
                 "data-allpage" : page
             });
-        } else if(mode === null) {
-            console.log("ugoira");
-            console.log($parsed.find("#wrapper").children("script")[0].innerText);
+        } else if(mode === "ugoira_view") {
+            var detailScript = $parsed.find("#wrapper").children("script")[0].innerText;
+            var ugoiraDetailData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustData"));
+            //var ugoiraFullscreenData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustFullscreenData"));
+
+            var zipSrc = ugoiraDetailData.src;
+
+            var req = new XMLHttpRequest();
+            req.open("GET", zipSrc, true);
+            req.responseType = "blob";
+
+            req.onload = function(event) {
+                var blob = req.response;
+                var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
+                var reader = new FileReader();
+                reader.addEventListener("loadend", function() {
+                    // reader.result contains the contents of blob as a typed array
+                    var zipFile = new JSZip(reader.result);
+                    console.log(zipFile);
+                    for(var name in zipFile.files) {
+                        //var arrayBuffer = zipFile.file(name).asArrayBuffer();
+                        //var blob = new Blob(zipFile.file(name).asArrayBuffer());
+                        //var url = URL.createObjectURL(blob);
+                        //console.log(url);
+                    }
+                });
+                reader.readAsArrayBuffer(blob);
+                }; //end req.onload
+
+            req.send();
         }
 
         var $boxImg = $("#boxImg");
