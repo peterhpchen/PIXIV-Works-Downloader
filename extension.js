@@ -19,25 +19,20 @@ $(document).ready(function() {
     var $boxClose = $("<img>", {
         title : "Close",
         id : "boxClose",
-        class : "icon overlay boxController manga big ugoira",
+        class : "icon overlay boxController manga big ugoira_view",
         src : iconUrl.cross
     });
-
-//    var $boxDownloadLink = $("<a>", {
-//        id : "boxDownloadLink",
-//        class : "manga big ugoira"
-//    });
 
     var $boxDownload = $("<img>", {
         title : "Download",
         id : "boxDownload",
-        class : "icon overlay boxController manga big ugoira",
+        class : "icon overlay boxController manga big ugoira_view",
         src : iconUrl.download
     });
 
     var $boxMultiDownload = $("<img>", {
         id : "boxMultiDownload",
-        class : "icon overlay boxController manga ugoira",
+        class : "icon overlay boxController manga ugoira_view",
         src : iconUrl.multiDownload
     });
 
@@ -54,23 +49,23 @@ $(document).ready(function() {
 
     var $boxLeft = $("<div>", {
         id : "boxLeft",
-        class : "arrow manga big ugoira boxController"
+        class : "arrow manga big ugoira_view boxController"
     });
 
     var $boxLeftIcon = $("<img>", {
         id : "boxLeftIcon",
-        class : "arrowIcon icon overlay manga big ugoira",
+        class : "arrowIcon icon overlay manga big ugoira_view",
         src : iconUrl.left 
     });
 
     var $boxRight = $("<div>", {
         id : "boxRight",
-        class : "arrow manga big ugoira boxController"
+        class : "arrow manga big ugoira_view boxController"
     });
 
     var $boxRightIcon = $("<img>", {
         id : "boxRightIcon",
-        class : "arrowIcon icon overlay manga big ugoira",
+        class : "arrowIcon icon overlay manga big ugoira_view",
         src : iconUrl.right
     });
 
@@ -350,6 +345,10 @@ $(document).ready(function() {
         var topOffsetFromBeforeToAfter = (ImgHeight - $this.height())/2;
         var leftOffsetFromBeforeToAfter = (ImgWidth - $this.width())/2;
 
+        if(!(topOffsetFromBeforeToAfter || leftOffsetFromBeforeToAfter)) {
+            return false;
+        }
+
         $boxLoading.css({
             display : "none",
         }); //boxLoading icon disable
@@ -376,6 +375,10 @@ $(document).ready(function() {
             complete : function() {
                 $("." + $boxContent.attr("data-mode")).css("display", "inline");
                 $(".arrowIcon").css("display", "none");
+                if($boxContent.attr("data-mode") === "ugoira_view") {
+                    timeoutID = 
+                    window.setInterval(changeImage, imgs[0].delay);
+                }
             }
         });
     }; //end boxResize
@@ -436,6 +439,8 @@ $(document).ready(function() {
             var ugoiraDetailData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustData"));
             //var ugoiraFullscreenData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustFullscreenData"));
 
+            imgs = ugoiraDetailData.frames;
+
             var zipSrc = ugoiraDetailData.src;
 
             var req = new XMLHttpRequest();
@@ -449,24 +454,34 @@ $(document).ready(function() {
                 reader.addEventListener("loadend", function() {
                     // reader.result contains the contents of blob as a typed array
                     var zipFile = new JSZip(reader.result);
-                    console.log(zipFile);
-                    for(var name in zipFile.files) {
-                        //var arrayBuffer = zipFile.file(name).asArrayBuffer();
-                        //var blob = new Blob(zipFile.file(name).asArrayBuffer());
-                        //var url = URL.createObjectURL(blob);
-                        //console.log(url);
+                    for(var key in imgs) {
+                        var uint8 = zipFile.files[imgs[key].file].asUint8Array();
+                        var blob = new Blob([uint8]);
+                        var url = URL.createObjectURL(blob);
+                        imgs[key].url = url;
                     }
+                    $boxContent.attr("data-ugoiranext", 1);
+                    $("#boxImg").attr("src", imgs[0].url);
                 });
                 reader.readAsArrayBuffer(blob);
                 }; //end req.onload
 
             req.send();
+            return false;
         }
 
         var $boxImg = $("#boxImg");
 
         $boxImg.attr("src", medienSrc);
     }; //end setBoxDashBoardAndController
+
+    function changeImage() {
+        var next = $boxContent.attr("data-ugoiranext");
+        $("#boxImg").attr("src", imgs[next].url);
+        $boxContent.attr("data-ugoiranext", getPageNum(next, imgs.length, 1));
+        //timeoutID = 
+        //timeouts.push(window.setTimeout(changeImage, imgs[next].delay));
+    }
 
     mangaPage = function() {
         $(".boxDashboard").css("display", "none");
@@ -550,6 +565,14 @@ $(document).ready(function() {
                 });
                 $("html").css({overflow : "auto"}); //enable scroll bar
                 $("#boxImg").remove();
+
+                clearInterval(timeoutID);
+                //console.log(timeouts);
+                //for(var key in timeouts) {
+                //    window.clearTimeout(timeouts[key]);
+                //}
+
+                //timeouts = [];
             }
         }); //end box animate
     }; //end $.boxClose
@@ -687,6 +710,9 @@ $(document).ready(function() {
     };
     //end function sets
     
+    var timeoutID = 0;
+    //var timeouts = [];
+    var imgs = [];
     var illustIdList = setIllustId();
     setBox();
     setThumbnail();
