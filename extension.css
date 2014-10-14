@@ -48,13 +48,29 @@
     right : 45px;
 }
 
-#boxUpIcon, #boxDownIcon, #boxLeftIcon, #boxRightIcon {
+#boxUpIcon, #boxDownIcon, #boxLeftIcon, #boxRightIcon, #boxUgoiraIcon {
     opacity : 1.0;
 }
 
-#boxUp:hover, #boxDown:hover, #boxLeft:hover, #boxRight:hover{
+#boxUp:hover, #boxDown:hover, #boxLeft:hover, #boxRight:hover, #boxUgoira:hover {
     cursor : pointer;
 }
+
+#boxUgoira {
+    position: absolute;
+    top : 0px;
+    left : 35%;
+    width : 30%;
+    height : 100%;
+}
+
+#boxUgoiraIcon {
+    left : 50%;
+    top : 50%;
+    margin-left : -15px !important;
+    margin-top : -15px !important;
+}
+
 #boxUp, #boxDown {
     position : absolute;
     width : 30%;
@@ -131,4 +147,19 @@
     top : 0;
     left : 0;
     z-index : 9999;
+}
+
+#boxTitle {
+    top : -15px;
+    left : -15px;
+    height : 30px;
+    line-height : 30px;
+    background-color : SkyBlue;
+    border-radius : 25px;
+    overflow : hidden;
+}
+
+#boxTitle:hover {
+    opacity : 1.0;
+    overflow : visible;
 }

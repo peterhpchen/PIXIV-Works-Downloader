@@ -1,5 +1,4 @@
-$(document).ready(function() {
-
+$(document).ready(function() { 
     var iconUrl = {
         enlarge : chrome.extension.getURL("image/enlarge.png"),
         cross : chrome.extension.getURL("image/cross.png"),
@@ -9,7 +8,9 @@ $(document).ready(function() {
         up : chrome.extension.getURL("image/arrows/up.png"),
         down : chrome.extension.getURL("image/arrows/down.png"),
         left : chrome.extension.getURL("image/arrows/left.png"),
-        right : chrome.extension.getURL("image/arrows/right.png")
+        right : chrome.extension.getURL("image/arrows/right.png"),
+        play : chrome.extension.getURL("image/play.png"),
+        pause : chrome.extension.getURL("image/pause.png")
     }; //end iconUrl
 
     var $box = $("<div>", {
@@ -32,7 +33,7 @@ $(document).ready(function() {
 
     var $boxMultiDownload = $("<img>", {
         id : "boxMultiDownload",
-        class : "icon overlay boxController manga ugoira_view",
+        class : "icon overlay boxController manga",
         src : iconUrl.multiDownload
     });
 
@@ -44,15 +45,16 @@ $(document).ready(function() {
 
     var $boxTitle = $("<div>", {
         id : "boxTitle",
-        class : "boxDashboard"
+        class : "boxDashboard overlay"
     });
 
     var $boxLeft = $("<div>", {
         id : "boxLeft",
-        class : "arrow manga big ugoira_view boxController"
+        class : "buttonZone manga big ugoira_view boxController"
     });
 
     var $boxLeftIcon = $("<img>", {
+        title : "Left",
         id : "boxLeftIcon",
         class : "arrowIcon icon overlay manga big ugoira_view",
         src : iconUrl.left 
@@ -60,10 +62,11 @@ $(document).ready(function() {
 
     var $boxRight = $("<div>", {
         id : "boxRight",
-        class : "arrow manga big ugoira_view boxController"
+        class : "buttonZone manga big ugoira_view boxController"
     });
 
     var $boxRightIcon = $("<img>", {
+        title : "Right",
         id : "boxRightIcon",
         class : "arrowIcon icon overlay manga big ugoira_view",
         src : iconUrl.right
@@ -71,10 +74,11 @@ $(document).ready(function() {
 
     var $boxUp = $("<div>", {
         id : "boxUp",
-        class : "arrow multiPicture boxController manga"
+        class : "buttonZone multiPicture boxController manga"
     });
 
     var $boxUpIcon = $("<img>", {
+        title : "Up",
         id : "boxUpIcon",
         class : "arrowIcon icon overlay manga",
         src : iconUrl.up
@@ -82,10 +86,11 @@ $(document).ready(function() {
 
     var $boxDown = $("<div>", {
         id : "boxDown",
-        class : "arrow multiPicture boxController manga"
+        class : "buttonZone multiPicture boxController manga"
     });
 
     var $boxDownIcon = $("<img>", {
+        title : "Down",
         id : "boxDownIcon",
         class : "arrowIcon icon overlay manga",
         src : iconUrl.down
@@ -93,6 +98,18 @@ $(document).ready(function() {
 
     var $boxContent = $("<div>", {
         id : "boxContent"
+    });
+
+    var $boxUgoira = $("<div>", {
+        id : "boxUgoira",
+        class : "buttonZone boxController ugoira_view",
+    });
+
+    var $boxUgoiraIcon = $("<img>", {
+        title : "Pause",
+        id : "boxUgoiraIcon",
+        class : "icon overlay ugoira_view",
+        src : iconUrl.pause
     });
 
     var $boxShadow = $("<div>", {
@@ -141,6 +158,10 @@ $(document).ready(function() {
                 ) //end div#boxleft append
             ).append(
                 $boxContent
+            ).append(
+                $boxUgoira.append(
+                    $boxUgoiraIcon
+                )
             ) //end div#box append
         ) //end body append box
         .append(
@@ -235,7 +256,12 @@ $(document).ready(function() {
         var $boxImg = $("#boxImg");
         var src = $boxImg.attr("src");
 
-        var bigSrc = getBigSrc(src, mode);
+        var bigSrc = "";
+        if(mode === "ugoira_view") {
+            bigSrc = bigUgoiraZipSrc;
+        } else {
+            bigSrc = getBigSrc(src, mode);
+        }
         getBlobAndDownlaod(bigSrc);
 
     }; //end $.download
@@ -313,6 +339,17 @@ $(document).ready(function() {
         $.when.apply(null, deferreds).done(generateZip);
     }; //end $.multiDownload
 
+    doSomethingAfterboxResize = function() {
+        $("." + $boxContent.attr("data-mode")).css("display", "inline");
+        $boxTitle.css("display", "inline");
+        $(".arrowIcon").css("display", "none");
+        $boxUgoiraIcon.css("display", "none");
+        if($boxContent.attr("data-mode") === "ugoira_view") {
+            timeoutID = window.setTimeout(changeImage, imgs[0].delay);
+        }
+        $boxContent.attr("data-new", false);
+    }; //end doSomethingAfterboxResize
+
     boxResize = function() {
         var nowNum = $boxContent.attr("data-now");
         var $thumbnail = $("._layout-thumbnail[data-count=" + nowNum + "]").children(); //thumbnail
@@ -345,13 +382,16 @@ $(document).ready(function() {
         var topOffsetFromBeforeToAfter = (ImgHeight - $this.height())/2;
         var leftOffsetFromBeforeToAfter = (ImgWidth - $this.width())/2;
 
-        if(!(topOffsetFromBeforeToAfter || leftOffsetFromBeforeToAfter)) {
-            return false;
-        }
-
         $boxLoading.css({
             display : "none",
         }); //boxLoading icon disable
+
+        if(!(topOffsetFromBeforeToAfter || leftOffsetFromBeforeToAfter)) {
+            if($boxContent.attr("data-new") === "true") {
+                doSomethingAfterboxResize();
+            }
+            return false;
+        }
 
         //animate box and boxImg
         $box.animate({
@@ -373,12 +413,7 @@ $(document).ready(function() {
                }
             },
             complete : function() {
-                $("." + $boxContent.attr("data-mode")).css("display", "inline");
-                $(".arrowIcon").css("display", "none");
-                if($boxContent.attr("data-mode") === "ugoira_view") {
-                    timeoutID = 
-                    window.setInterval(changeImage, imgs[0].delay);
-                }
+                doSomethingAfterboxResize();
             }
         });
     }; //end boxResize
@@ -403,7 +438,7 @@ $(document).ready(function() {
     
     getJsonFromScript = function(script, name) {
         var data = script.replace(/\s+/g, "");
-        var results = new RegExp(name + "=({[^;]*)").exec(data);
+        var results = new RegExp(name + "=([^;]*)").exec(data);
         if(results === null) {
             return null;
         } else {
@@ -420,6 +455,18 @@ $(document).ready(function() {
         var mode = urlParam(detailHref, "mode");
         $boxContent.attr("data-mode", mode);
         var medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
+        var detailScript = $parsed.find("#wrapper").children("script")[0].innerText;
+        var title = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustTitle"));
+        var id = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustId"));
+        var name = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userName"));
+        var userId = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userId"));
+        $boxTitle.html(
+                title + "<br />" +
+                "ID : " + id + "<br />" +
+                "NAME : " + name + "<br />" +
+                "USERID : " + userId
+        );
+        console.log($boxTitle.innerHeight());
 
         if(mode === "big") {
         } else if(mode === "manga") {
@@ -435,11 +482,12 @@ $(document).ready(function() {
                 "data-allpage" : page
             });
         } else if(mode === "ugoira_view") {
-            var detailScript = $parsed.find("#wrapper").children("script")[0].innerText;
             var ugoiraDetailData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustData"));
-            //var ugoiraFullscreenData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustFullscreenData"));
+            var bigUgoiraData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustFullscreenData"));
+            bigUgoiraZipSrc = bigUgoiraData.src;
 
             imgs = ugoiraDetailData.frames;
+            var mimeType = ugoiraDetailData.mime_type;
 
             var zipSrc = ugoiraDetailData.src;
 
@@ -456,7 +504,7 @@ $(document).ready(function() {
                     var zipFile = new JSZip(reader.result);
                     for(var key in imgs) {
                         var uint8 = zipFile.files[imgs[key].file].asUint8Array();
-                        var blob = new Blob([uint8]);
+                        var blob = new Blob([uint8], {type : mimeType});
                         var url = URL.createObjectURL(blob);
                         imgs[key].url = url;
                     }
@@ -479,11 +527,11 @@ $(document).ready(function() {
         var next = $boxContent.attr("data-ugoiranext");
         $("#boxImg").attr("src", imgs[next].url);
         $boxContent.attr("data-ugoiranext", getPageNum(next, imgs.length, 1));
-        //timeoutID = 
-        //timeouts.push(window.setTimeout(changeImage, imgs[next].delay));
+        timeoutID = window.setTimeout(changeImage, imgs[next].delay);
     }
 
     mangaPage = function() {
+        $boxContent.attr("data-new", true);
         $(".boxDashboard").css("display", "none");
         $(".boxController").css("display", "none");
         initialBoxLoading();
@@ -530,9 +578,14 @@ $(document).ready(function() {
             top : initialBoxTop
         };
     }; //end getInitialBoxPosition
-    
+
     $.boxClose = function(event) {
-        var num = $("#boxContent").attr("data-now");
+        if($boxContent.attr("data-mode") === "ugoira_view") {
+            window.clearTimeout(timeoutID);
+            $boxUgoiraIcon.attr("src", iconUrl.pause);
+        }
+
+        var num = $boxContent.attr("data-now");
         var $thumbnail = $("._layout-thumbnail[data-count=" + num + "]");
         var initialBoxPosition = getInitialBoxPosition($thumbnail);
         var $controller = $(".boxController");
@@ -565,14 +618,6 @@ $(document).ready(function() {
                 });
                 $("html").css({overflow : "auto"}); //enable scroll bar
                 $("#boxImg").remove();
-
-                clearInterval(timeoutID);
-                //console.log(timeouts);
-                //for(var key in timeouts) {
-                //    window.clearTimeout(timeouts[key]);
-                //}
-
-                //timeouts = [];
             }
         }); //end box animate
     }; //end $.boxClose
@@ -674,6 +719,11 @@ $(document).ready(function() {
     }; //end setEnlarge
 
     pageBox = function() {
+        if($boxContent.attr("data-mode") === "ugoira_view") {
+            window.clearTimeout(timeoutID);
+            $boxUgoiraIcon.attr("src", iconUrl.pause);
+        }
+        $boxContent.attr("data-new", true);
         $(".boxController").css("display", "none");
         $(".boxDashboard").css("display", "none");
         $this = $(this);
@@ -694,7 +744,7 @@ $(document).ready(function() {
     }; //end setBoxPageEvent
 
     setArrowsEvent = function() {
-        $(".arrow").hover(
+        $(".buttonZone").hover(
             function() {
                 $this = $(this);
                 $("#" + $this.attr("id") + "Icon").css("display", "inline");
@@ -708,11 +758,26 @@ $(document).ready(function() {
         $boxDownload.click($.download);
         $boxMultiDownload.click($.multiDownload);
     };
+
+    setUgoiraEvent = function() {
+        $boxUgoira.click(function() {
+            var $this = $(this);
+            if($boxUgoiraIcon.attr("src") === iconUrl.pause) {
+                window.clearTimeout(timeoutID);
+                $boxUgoiraIcon.attr("src", iconUrl.play);
+            } else {
+                changeImage();
+                $boxUgoiraIcon.attr("src", iconUrl.pause);
+            }
+        }); //end click
+    }; //end setUgoiraEvent
+
     //end function sets
     
     var timeoutID = 0;
-    //var timeouts = [];
     var imgs = [];
+    var bigUgoiraZipSrc = "";
+
     var illustIdList = setIllustId();
     setBox();
     setThumbnail();
@@ -722,6 +787,7 @@ $(document).ready(function() {
     setPageMangaEvent();
     setArrowsEvent();
     setDownloadEvent();
+    setUgoiraEvent();
 
     $(window).resize(function() {
         $boxShadow.css({
