@@ -149,17 +149,34 @@
     z-index : 9999;
 }
 
-#boxTitle {
-    top : -15px;
-    left : -15px;
-    height : 30px;
-    line-height : 30px;
-    background-color : SkyBlue;
-    border-radius : 25px;
+#boxTitle, #boxPage {
+    background-color : white;
+    text-align : center;
+    border-style : solid;
+    border-width : 2px;
+    border-color : SkyBlue;
+    color : SkyBlue;
+    white-space: nowrap; 
     overflow : hidden;
+    line-height : 30px;
+}
+#boxTitle {
+    top : -17px;
+    left : -17px;
+    border-radius : 30px;
 }
 
 #boxTitle:hover {
     opacity : 1.0;
-    overflow : visible;
+}
+
+#boxPage {
+    bottom : -17px;
+    right: -17px;
+    height : 30px;
+    border-radius : 50%;
+}
+
+#boxPage:hover {
+    opacity : 1.0;
 }

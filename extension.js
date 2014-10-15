@@ -112,6 +112,11 @@ $(document).ready(function() {
         src : iconUrl.pause
     });
 
+    var $boxPage = $("<div>", {
+        id : "boxPage",
+        class : "boxDashboard overlay manga"
+    });
+
     var $boxShadow = $("<div>", {
         id : "boxShadow"
     }).css({
@@ -140,6 +145,8 @@ $(document).ready(function() {
                 $boxLoading
             ).append(
                 $boxTitle
+            ).append(
+                $boxPage
             ).append(
                 $boxLeft.append(
                     $boxLeftIcon
@@ -179,12 +186,9 @@ $(document).ready(function() {
         });
     }; //end initialEnlarge
 
-    setThumbnail = function() {
+    setThumbnail = function($thumbnail) {
          
-        var $layoutThumbnails = $("._layout-thumbnail"); //get div._layout-thumbnail (img.thumbnail 's parent)
-        var $thumbnails = $("._thumbnail"); //get img._thumbnail (small picture)
-
-        $layoutThumbnails.hover(
+        $thumbnail.hover(
             function(event) {
                 var $this = $(this); //thumbnail
 
@@ -219,15 +223,6 @@ $(document).ready(function() {
             return results[1];
         }
     }; //end urlParam
-
-    setIllustId = function() {
-        var illustIdList = [];
-        for(var currentImageItem = $(".image-item").first(), count = 0; currentImageItem.length !== 0; currentImageItem = currentImageItem.next(), count++) {
-            currentImageItem.find("._layout-thumbnail").attr("data-count", count);
-            illustIdList.push(urlParam(currentImageItem.children(".work").attr("href"), "illust_id"));
-        }
-        return illustIdList;
-    }; //end setIllustId
 
     getBigSrc = function(src, mode) {
         var bigSrc = "";
@@ -345,19 +340,14 @@ $(document).ready(function() {
         $(".arrowIcon").css("display", "none");
         $boxUgoiraIcon.css("display", "none");
         if($boxContent.attr("data-mode") === "ugoira_view") {
-            timeoutID = window.setTimeout(changeImage, imgs[0].delay);
+            if($boxContent.attr("data-new") === "true") {
+                timeoutID = window.setTimeout(changeImage, imgs[0].delay);
+                $boxContent.attr("data-new", false);
+            }
         }
-        $boxContent.attr("data-new", false);
     }; //end doSomethingAfterboxResize
 
-    boxResize = function() {
-        var nowNum = $boxContent.attr("data-now");
-        var $thumbnail = $("._layout-thumbnail[data-count=" + nowNum + "]").children(); //thumbnail
-        var $this = $(this);
-        if($thumbnail.attr("src") === $this.attr("src")) {
-            return false;
-        }
-
+    getImgSize = function() {
         //get initial picture size
         var medienPicture = new Image();
         medienPicture.src = $("#boxImg").attr("src");
@@ -378,6 +368,24 @@ $(document).ready(function() {
             ImgHeight = maxHeight;
         }
 
+        return {
+            width : ImgWidth,
+            height : ImgHeight
+        };
+    }; //end getImgSize
+
+    boxResize = function() {
+        var nowNum = $boxContent.attr("data-now");
+        var $thumbnail = $("._layout-thumbnail[data-count=" + nowNum + "]").children(); //thumbnail
+        var $this = $(this);
+        if($thumbnail.attr("src") === $this.attr("src")) {
+            return false;
+        }
+
+        var imgSize = getImgSize();
+        var ImgWidth = imgSize.width;
+        var ImgHeight = imgSize.height;
+
         //We have to get gap of size between thumbnail and medien picture
         var topOffsetFromBeforeToAfter = (ImgHeight - $this.height())/2;
         var leftOffsetFromBeforeToAfter = (ImgWidth - $this.width())/2;
@@ -390,6 +398,10 @@ $(document).ready(function() {
             if($boxContent.attr("data-new") === "true") {
                 doSomethingAfterboxResize();
             }
+            return false;
+        }
+
+        if($boxContent.attr("data-new") === "false" && $boxContent.attr("data-mode") === "ugoira_view") {
             return false;
         }
 
@@ -460,13 +472,27 @@ $(document).ready(function() {
         var id = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustId"));
         var name = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userName"));
         var userId = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userId"));
+        $boxTitle.html(title);
+        var titleInitialWidth = $boxTitle.width();
+        if(titleInitialWidth < 30) {
+            titleInitialWidth = 30;
+        }
         $boxTitle.html(
-                title + "<br />" +
-                "ID : " + id + "<br />" +
-                "NAME : " + name + "<br />" +
-                "USERID : " + userId
+                title + "<br>" +
+                "ID : " + id + "<br>" +
+                "NAME : " + name + "<br>" +
+                "USER ID : " + userId
         );
-        console.log($boxTitle.innerHeight());
+        var titleAfterHeight = $boxTitle.height();
+        var titleAfterWidth = $boxTitle.width();
+        $boxTitle.attr({
+            "data-afterheight" : titleAfterHeight,
+            "data-initialwidth" : titleInitialWidth,
+            "data-afterwidth" : titleAfterWidth
+        }).css({
+            height : "30px",
+            width : titleInitialWidth
+        });
 
         if(mode === "big") {
         } else if(mode === "manga") {
@@ -481,6 +507,7 @@ $(document).ready(function() {
                 "data-page" : 0,
                 "data-allpage" : page
             });
+            $boxPage.html("1&nbsp;/&nbsp;" + page);
         } else if(mode === "ugoira_view") {
             var ugoiraDetailData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustData"));
             var bigUgoiraData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustFullscreenData"));
@@ -549,6 +576,8 @@ $(document).ready(function() {
         var newSrc = nowSrc.replace("_p" + nowPage, "_p" + newPage);
         $boxImg.attr("src", newSrc);
         $boxContent.attr("data-page", newPage);
+        var humanPage = parseInt(newPage) + 1;
+        $boxPage.html(humanPage + "&nbsp;/&nbsp;" + allPage);
     }; //end mangaPageEvent
 
     setPageMangaEvent = function() {
@@ -584,6 +613,10 @@ $(document).ready(function() {
             window.clearTimeout(timeoutID);
             $boxUgoiraIcon.attr("src", iconUrl.pause);
         }
+        $boxTitle.css({
+            width : "",
+            height : ""
+        });
 
         var num = $boxContent.attr("data-now");
         var $thumbnail = $("._layout-thumbnail[data-count=" + num + "]");
@@ -633,6 +666,7 @@ $(document).ready(function() {
 
         $("html").css({overflow : "hidden"}); //disable scroll bar
         $(".boxController").css({display : 'none'}); //button display none
+        $(".boxDashboard").css({display : "none"});
 
         //set thumbnail for box
         $boxContent
@@ -696,7 +730,10 @@ $(document).ready(function() {
 
             var href = "/member_illust.php?mode=medium&illust_id=" + illustIdList[currentNum]; //picture link
 
-            $boxContent.attr("data-now", currentNum);
+            $boxContent.attr({
+                "data-new" : true,
+                "data-now" : currentNum
+            });
 
             initialBox();
 
@@ -726,6 +763,10 @@ $(document).ready(function() {
         $boxContent.attr("data-new", true);
         $(".boxController").css("display", "none");
         $(".boxDashboard").css("display", "none");
+        $boxTitle.css({
+            width : "",
+            height : ""
+        });
         $this = $(this);
         if($this.attr("id") === "boxRight") {
             $boxContent.attr("data-now", getPageNum($boxContent.attr("data-now"), illustIdList.length, 1));
@@ -772,15 +813,70 @@ $(document).ready(function() {
         }); //end click
     }; //end setUgoiraEvent
 
+    setTitleEvent = function() {
+        $boxTitle.hover(function() {
+            $this = $(this);
+            $this.animate({
+                height : $this.attr("data-afterheight"),
+                width : parseInt($this.attr("data-afterwidth")) + 30
+            });
+        }, function() {
+            $this = $(this);
+            $this.animate({
+                height : "30px",
+                width : $this.attr("data-initialwidth")
+            });
+        }); //end hover
+    }; //end setTitleEvent
+
+    setResizeHandler = function() {
+        $(window).resize(function() {
+            $boxShadow.css({
+                width : window.innerWidth,
+                height : window.innerHeight
+            });
+
+            var imgSize = getImgSize();
+
+            $box.css({
+                width : imgSize.width,
+                height : imgSize.height,
+                top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
+                left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
+            }); //end box animate
+
+            $("#boxImg").css({
+                width : imgSize.width,
+                height : imgSize.height
+            });
+        }); //end window resize
+    }; //end setResizeHandler
+
+    traversalThumbnails = function() {
+        var layoutThumbnails = $("._layout-thumbnail");
+        console.log(layoutThumbnails);
+        var count = 0;
+        for(var i = 0; i < layoutThumbnails.length; i++) {
+            var $layoutThumbnail = $(layoutThumbnails[i]);
+            var illustId = urlParam($layoutThumbnail.parent("a").attr("href"), "illust_id");
+            if(illustId) {
+                $layoutThumbnail.attr("data-count", count);
+                count++;
+                illustIdList.push(illustId);
+                setThumbnail($layoutThumbnail);
+            }
+        }
+    }; //end traversalThumbnails
     //end function sets
     
     var timeoutID = 0;
     var imgs = [];
     var bigUgoiraZipSrc = "";
 
-    var illustIdList = setIllustId();
+    var illustIdList = [];
+
+    traversalThumbnails();
     setBox();
-    setThumbnail();
     setEnlargeEvent();
     setBoxCloseEvent();
     setBoxPageEvent();
@@ -788,24 +884,7 @@ $(document).ready(function() {
     setArrowsEvent();
     setDownloadEvent();
     setUgoiraEvent();
+    setTitleEvent();
+    setResizeHandler();
 
-    $(window).resize(function() {
-        $boxShadow.css({
-            width : window.innerWidth,
-            height : window.innerHeight
-        });
-
-        $box.css({
-            top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
-            left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
-        }); //end box animate
-    }); //end window resize
-
-    //$(window).scroll(function() {
-    //    var $box = $('#box');
-    //    $box.css({
-    //        top : $(document).scrollTop() + (window.innerHeight - $box.outerHeight(true))/2,
-    //        left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
-    //    }); //end box animate
-    //}); //end window scroll
 });
