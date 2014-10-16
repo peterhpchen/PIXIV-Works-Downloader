@@ -149,13 +149,13 @@
     z-index : 9999;
 }
 
-#boxTitle, #boxPage {
+#boxTitle, #boxPage, #boxType {
     background-color : white;
     text-align : center;
     border-style : solid;
     border-width : 2px;
-    border-color : SkyBlue;
-    color : SkyBlue;
+    border-color : DeepSkyBlue;
+    color : DeepSkyBlue;
     white-space: nowrap; 
     overflow : hidden;
     line-height : 30px;
@@ -179,4 +179,19 @@
 
 #boxPage:hover {
     opacity : 1.0;
+}
+
+#boxType {
+    bottom : -17px;
+    left : -17px;
+    height : 30px;
+    border-radius : 30px;
+}
+
+#boxType:hover {
+    opacity : 1.0;
+}
+
+.bolder {
+    font-weight : bold;
 }

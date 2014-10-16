@@ -117,6 +117,11 @@ $(document).ready(function() {
         class : "boxDashboard overlay manga"
     });
 
+    var $boxType = $("<div>", {
+        id : "boxType",
+        class : "boxDashboard overlay manga ugoira_view big"
+    });
+
     var $boxShadow = $("<div>", {
         id : "boxShadow"
     }).css({
@@ -147,6 +152,8 @@ $(document).ready(function() {
                 $boxTitle
             ).append(
                 $boxPage
+            ).append(
+                $boxType
             ).append(
                 $boxLeft.append(
                     $boxLeftIcon
@@ -257,47 +264,87 @@ $(document).ready(function() {
         } else {
             bigSrc = getBigSrc(src, mode);
         }
-        getBlobAndDownlaod(bigSrc);
-
+        
+        $.when(getBlobAndDoubleCheck(bigSrc)).done(function(blob) {
+            if(blob.size) {
+                var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
+                saveAs(blob, "test." + dataType);
+            } else {
+                //white flag
+                console.log("error");
+            }
+        });
     }; //end $.download
 
-    getBlobAndDownlaod = function(url) {
+    getBlobAndDoubleCheck = function(url) {
+        var deferred = $.Deferred();
+        $.when(getBlob(url)).done(function(blob) {
+            if(!blob.size) {
+                var mimeType = url.substring(url.lastIndexOf("."));
+                if(mimeType === ".jpg") {
+                    url = url.replace(mimeType, ".png");
+                } else {
+                    url = url.replace(mimeType, ".jpg");
+                }
+
+                $.when(getBlob(url)).done(function(blob) {
+                    deferred.resolve(blob);
+                });
+            } else {
+                deferred.resolve(blob);
+            }
+        });
+        return deferred;
+    }; //end getBlobAndDoubleCheck
+
+    getBlob = function(url) {
+        var deferred = $.Deferred();
         var req = new XMLHttpRequest();
+
         req.open("GET", url, true);
         req.responseType = "blob";
 
+        req.onprogress = function(event) {
+            if(event.lengthComputable) {
+                var percentComplete = event.loaded/event.total;
+                console.log("req : " + percentComplete);
+            }
+        };
+
         req.onload = function(event) {
             var blob = req.response;
-            var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-            saveAs(blob, "test." + dataType);
+            deferred.resolve(blob);
         }; //end req.onload
 
         req.send();
-    }; //end getBlobUrlFromPng
+
+        return deferred;
+    }; //end getBlob
 
     $.addImgToZip = function(zip, imgLink, number) {
         var deferred = $.Deferred();
 
-        var req = new XMLHttpRequest();
-        req.open("GET", imgLink, true);
-        req.responseType = "blob";
-
-        req.onload = function(event) {
-            var blob = req.response;
-            var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-            //var url = URL.createObjectURL(blob);
-            var reader = new FileReader();
-            reader.addEventListener("loadend", function() {
-               // reader.result contains the contents of blob as a typed array
-
-                zip.file("p" + number + "." + dataType, reader.result, {base64 : true});
+        $.when(getBlobAndDoubleCheck(imgLink)).done(function(blob) {
+            if(blob.size) {
+                var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
+                var reader = new FileReader();
+                reader.onload = function() {
+                    // reader.result contains the contents of blob as a typed array
+                    zip.file("p" + number + "." + dataType, reader.result, {base64 : true});
+                    deferred.resolve(zip);
+                };
+                reader.onprogress = function(event) {
+                    if(event.lengthComputable) {
+                        var percentComplete = event.loaded/event.total;
+                        console.log("reader : " + percentComplete);
+                    }
+                };
+                reader.readAsArrayBuffer(blob);
+            } else {
+                console.log("error");
                 deferred.resolve(zip);
-            });
-            reader.readAsArrayBuffer(blob);
-
-        }; //end req.onload
-
-        req.send();
+            }
+        });
 
         return deferred;
     }; //end addImgToZip
@@ -449,7 +496,7 @@ $(document).ready(function() {
     }; //end getPageNum
     
     getJsonFromScript = function(script, name) {
-        var data = script.replace(/\s+/g, "");
+        var data = script.replace(/\s*=\s*/g, "=");
         var results = new RegExp(name + "=([^;]*)").exec(data);
         if(results === null) {
             return null;
@@ -472,13 +519,14 @@ $(document).ready(function() {
         var id = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustId"));
         var name = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userName"));
         var userId = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userId"));
-        $boxTitle.html(title);
+        console.log(title);
+        $boxTitle.html("<span class='bolder'>" + title + "</span>");
         var titleInitialWidth = $boxTitle.width();
         if(titleInitialWidth < 30) {
             titleInitialWidth = 30;
         }
         $boxTitle.html(
-                title + "<br>" +
+                "<span class='bolder'>" + title + "</span><br>" +
                 "ID : " + id + "<br>" +
                 "NAME : " + name + "<br>" +
                 "USER ID : " + userId
@@ -494,8 +542,11 @@ $(document).ready(function() {
             width : titleInitialWidth
         });
 
+        console.log(mode);
         if(mode === "big") {
+            $boxType.html("<span class='bolder'>Single</span>");
         } else if(mode === "manga") {
+            $boxType.html("<span class='bolder'>Multiple</span>");
             if(medienSrc.indexOf("600x600") === -1) {
                 medienSrc = medienSrc.replace("_m", "_p0");
             } else {
@@ -509,6 +560,7 @@ $(document).ready(function() {
             });
             $boxPage.html("1&nbsp;/&nbsp;" + page);
         } else if(mode === "ugoira_view") {
+            $boxType.html("<span class='bolder'>Animate</span>");
             var ugoiraDetailData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustData"));
             var bigUgoiraData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustFullscreenData"));
             bigUgoiraZipSrc = bigUgoiraData.src;
@@ -854,7 +906,6 @@ $(document).ready(function() {
 
     traversalThumbnails = function() {
         var layoutThumbnails = $("._layout-thumbnail");
-        console.log(layoutThumbnails);
         var count = 0;
         for(var i = 0; i < layoutThumbnails.length; i++) {
             var $layoutThumbnail = $(layoutThumbnails[i]);
