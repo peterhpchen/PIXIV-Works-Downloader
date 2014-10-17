@@ -195,3 +195,8 @@
 .bolder {
     font-weight : bold;
 }
+
+#boxProgress {
+    position : absolute;
+    z-index : 10002;
+}

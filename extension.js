@@ -122,6 +122,14 @@ $(document).ready(function() {
         class : "boxDashboard overlay manga ugoira_view big"
     });
 
+    var $boxProgress = $("<canvas>", {
+        id : "boxProgress",
+        class : "boxDashboard"
+    }).attr({
+        width : "30px",
+        height : "30px"
+    });
+
     var $boxShadow = $("<div>", {
         id : "boxShadow"
     }).css({
@@ -146,6 +154,8 @@ $(document).ready(function() {
                 $boxDownload
             ).append(
                 $boxMultiDownload
+            ).append(
+                $boxProgress
             ).append(
                 $boxLoading
             ).append(
@@ -253,7 +263,58 @@ $(document).ready(function() {
         return bigSrc;
     }; //end getBigSrc
 
+    getNumberX = function(percent) {
+        var x = 5;
+        if(percent < 10) { 
+            x = 12;
+        } else if(percent < 100) {
+            x = 8;
+        }
+        return x;
+    }; //end getNumberX
+    initialProgress = function(buttonLeft, buttonTop) {
+        $boxProgress.css({
+            display : "inline",
+            left : buttonLeft,
+            top: buttonTop
+        });
+
+        var canvas = $boxProgress[0];
+        var context = canvas.getContext("2d");
+
+        context.clearRect(0, 0, canvas.width, canvas.height); //clean canvas
+        //center
+        var circleX = canvas.width / 2;
+        var circleY = canvas.height / 2;
+
+        var r = 14; //radius
+
+        var startAngle = 0 * Math.PI; //right : 0, down : 0.5, left : 1, up : 1.5
+        var endAngle = 2 * Math.PI;
+        
+        var clockwise = false; //false : clockwise, true: anticlockwise
+
+        var numberX = getNumberX(0);
+
+        context.beginPath();
+        context.lineWidth = 1;
+        context.arc(circleX, circleY, r, startAngle, endAngle, clockwise);
+
+        context.font = "10pt";
+        context.fillStyle = "rgb(255, 0, 0)";
+        context.fillText(0, numberX, 20);
+        
+        context.strokeStyle = 'rgb(255, 0, 0)';
+        context.stroke();
+    }; //end initialProgress
     $.download = function() {
+
+        var $this = $(this);
+        var position = $this.position();
+        var left = position.left;
+        var top= position.top;
+        initialProgress(left, top);
+
         var mode = $boxContent.attr("data-mode");
         var $boxImg = $("#boxImg");
         var src = $boxImg.attr("src");
@@ -271,7 +332,6 @@ $(document).ready(function() {
                 saveAs(blob, "test." + dataType);
             } else {
                 //white flag
-                console.log("error");
             }
         });
     }; //end $.download
@@ -307,7 +367,6 @@ $(document).ready(function() {
         req.onprogress = function(event) {
             if(event.lengthComputable) {
                 var percentComplete = event.loaded/event.total;
-                console.log("req : " + percentComplete);
             }
         };
 
@@ -336,12 +395,10 @@ $(document).ready(function() {
                 reader.onprogress = function(event) {
                     if(event.lengthComputable) {
                         var percentComplete = event.loaded/event.total;
-                        console.log("reader : " + percentComplete);
                     }
                 };
                 reader.readAsArrayBuffer(blob);
             } else {
-                console.log("error");
                 deferred.resolve(zip);
             }
         });
@@ -519,7 +576,6 @@ $(document).ready(function() {
         var id = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustId"));
         var name = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userName"));
         var userId = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userId"));
-        console.log(title);
         $boxTitle.html("<span class='bolder'>" + title + "</span>");
         var titleInitialWidth = $boxTitle.width();
         if(titleInitialWidth < 30) {
@@ -542,7 +598,6 @@ $(document).ready(function() {
             width : titleInitialWidth
         });
 
-        console.log(mode);
         if(mode === "big") {
             $boxType.html("<span class='bolder'>Single</span>");
         } else if(mode === "manga") {
