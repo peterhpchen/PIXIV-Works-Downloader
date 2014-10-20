@@ -33,7 +33,7 @@ $(document).ready(function() {
 
     var $boxMultiDownload = $("<img>", {
         id : "boxMultiDownload",
-        class : "icon overlay boxController manga",
+        class : "icon overlay boxController manga ugoira_view",
         src : iconUrl.multiDownload
     });
 
@@ -98,6 +98,10 @@ $(document).ready(function() {
 
     var $boxContent = $("<div>", {
         id : "boxContent"
+    });
+
+    var $boxImg = $("<img>", {
+        id : "boxImg"
     });
 
     var $boxUgoira = $("<div>", {
@@ -181,7 +185,9 @@ $(document).ready(function() {
                     $boxDownIcon
                 ) //end div#boxleft append
             ).append(
-                $boxContent
+                $boxContent.append(
+                    $boxImg
+                )
             ).append(
                 $boxUgoira.append(
                     $boxUgoiraIcon
@@ -272,6 +278,7 @@ $(document).ready(function() {
         }
         return x;
     }; //end getNumberX
+
     initialProgress = function(buttonLeft, buttonTop) {
         $boxProgress.css({
             display : "inline",
@@ -283,6 +290,7 @@ $(document).ready(function() {
         var context = canvas.getContext("2d");
 
         context.clearRect(0, 0, canvas.width, canvas.height); //clean canvas
+
         //center
         var circleX = canvas.width / 2;
         var circleY = canvas.height / 2;
@@ -297,16 +305,65 @@ $(document).ready(function() {
         var numberX = getNumberX(0);
 
         context.beginPath();
-        context.lineWidth = 1;
+        context.lineWidth = 2;
         context.arc(circleX, circleY, r, startAngle, endAngle, clockwise);
 
+        context.fillStyle = "#FFFFFF";
+        context.fill();
+        context.strokeStyle = "#FFFFFF";
+        context.stroke();
+
         context.font = "10pt";
-        context.fillStyle = "rgb(255, 0, 0)";
+        context.fillStyle = "#009900";
         context.fillText(0, numberX, 20);
         
-        context.strokeStyle = 'rgb(255, 0, 0)';
-        context.stroke();
     }; //end initialProgress
+
+    currentProgress = function(proportion) {
+        var canvas = $boxProgress[0];
+        var context = canvas.getContext("2d");
+
+        context.clearRect(0, 0, canvas.width, canvas.height); //clean canvas
+
+        //center
+        var circleX = canvas.width / 2;
+        var circleY = canvas.height / 2;
+
+        var r = 14; //radius
+
+        var startAngle = 1.5 * Math.PI; //right : 0, down : 0.5, left : 1, up : 1.5
+        var endAngle = (1.5 + 2 * proportion) * Math.PI;
+        
+        var clockwise = false; //false : clockwise, true: anticlockwise
+        
+        var percent = parseInt(proportion * 100);
+
+        var numberX = getNumberX(percent);
+
+        context.lineWidth = 2;
+
+        //background 
+        context.beginPath();
+
+        context.arc(circleX, circleY, r, 0, 2 * Math.PI, clockwise);
+
+        context.fillStyle = "#FFFFFF";
+        context.fill();
+        context.strokeStyle = "#FFFFFF";
+        context.stroke();
+
+        //progress
+        context.beginPath();
+        context.arc(circleX, circleY, r, startAngle, endAngle, clockwise);
+
+        context.strokeStyle = "#009900";
+        context.stroke();
+
+        context.font = "10pt";
+        context.fillStyle = "#009900";
+        context.fillText(percent, numberX, 20);
+    }; //end currentProgress
+
     $.download = function() {
 
         var $this = $(this);
@@ -321,19 +378,32 @@ $(document).ready(function() {
 
         var bigSrc = "";
         if(mode === "ugoira_view") {
-            bigSrc = bigUgoiraZipSrc;
-        } else {
-            bigSrc = getBigSrc(src, mode);
-        }
-        
-        $.when(getBlobAndDoubleCheck(bigSrc)).done(function(blob) {
-            if(blob.size) {
+            var gif = new GIF({workers : 1});
+            for(var key in imgs) {
+                var img = new Image();
+                img.src = imgs[key].url;
+                gif.addFrame(img, {delay : imgs[key].delay});
+            }
+            gif.on("progress", function(percent) {
+                currentProgress(percent);
+            });
+            gif.on('finished', function(blob) {
                 var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
                 saveAs(blob, "test." + dataType);
-            } else {
-                //white flag
-            }
-        });
+            });
+            gif.render();
+        } else {
+            bigSrc = getBigSrc(src, mode);
+            $.when(getBlobAndDoubleCheck(bigSrc)).done(function(blob) {
+                if(blob.size) {
+                    var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
+                    saveAs(blob, "test." + dataType);
+                    $boxProgress.fadeOut();
+                } else {
+                    //white flag
+                }
+            });
+        }
     }; //end $.download
 
     getBlobAndDoubleCheck = function(url) {
@@ -367,6 +437,15 @@ $(document).ready(function() {
         req.onprogress = function(event) {
             if(event.lengthComputable) {
                 var percentComplete = event.loaded/event.total;
+
+                if($boxProgress.position().left === $boxMultiDownload.position().left && $boxContent.attr("data-mode") === "manga") {
+                    var page = $boxContent.attr("data-allpage");
+                    if(percentComplete === 1) {
+                        pageCount++;
+                    }
+                    percentComplete = pageCount / page;
+                }
+                currentProgress(percentComplete);
             }
         };
 
@@ -392,11 +471,6 @@ $(document).ready(function() {
                     zip.file("p" + number + "." + dataType, reader.result, {base64 : true});
                     deferred.resolve(zip);
                 };
-                reader.onprogress = function(event) {
-                    if(event.lengthComputable) {
-                        var percentComplete = event.loaded/event.total;
-                    }
-                };
                 reader.readAsArrayBuffer(blob);
             } else {
                 deferred.resolve(zip);
@@ -411,31 +485,56 @@ $(document).ready(function() {
 
         saveAs(content, "test.zip");
 
+        $boxProgress.fadeOut();
     }; //end generateZip
 
     $.multiDownload = function() {
+        var $this = $(this);
+        var position = $this.position();
+        var left = position.left;
+        var top= position.top;
+        initialProgress(left, top);
+
+        pageCount = 0;
+
+        var mode = $boxContent.attr("data-mode");
         var currentPage = $boxContent.attr("data-page");
         var page = $boxContent.attr("data-allpage");
         var $boxImg = $("#boxImg");
         var src = $boxImg.attr("src");
+        var bigSrc = "";
 
-        var bigSrc = getBigSrc(src, "manga");
-        bigSrc = bigSrc.replace("_p" + currentPage, "_p0");
+        if(mode === "manga") {
+            bigSrc = getBigSrc(src, "manga");
+            bigSrc = bigSrc.replace("_p" + currentPage, "_p0");
 
-        var imgLinks = [bigSrc];
+            var imgLinks = [bigSrc];
 
-        for(var i = 1; i < parseInt(page); i++) {
-            imgLinks.push(bigSrc.replace("_p0", "_p" + i));
-        } //end if
+            for(var i = 1; i < parseInt(page); i++) {
+                imgLinks.push(bigSrc.replace("_p0", "_p" + i));
+            } //end if
 
-        var zip = new JSZip();
-        var deferreds = [];
+            var zip = new JSZip();
+            var deferreds = [];
 
-        for(var key in imgLinks) {
-            deferreds.push( $.addImgToZip(zip, imgLinks[key], key));
+            for(var key in imgLinks) {
+                deferreds.push( $.addImgToZip(zip, imgLinks[key], key));
+            }
+
+            $.when.apply(null, deferreds).done(generateZip);
+        } else {
+            //ugoira
+            bigSrc = bigUgoiraZipSrc;
+            $.when(getBlobAndDoubleCheck(bigSrc)).done(function(blob) {
+                if(blob.size) {
+                    var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
+                    saveAs(blob, "test." + dataType);
+                    $boxProgress.fadeOut();
+                } else {
+                    //white flag
+                }
+            });
         }
-
-        $.when.apply(null, deferreds).done(generateZip);
     }; //end $.multiDownload
 
     doSomethingAfterboxResize = function() {
@@ -729,8 +828,9 @@ $(document).ready(function() {
         var $thumbnail = $("._layout-thumbnail[data-count=" + num + "]");
         var initialBoxPosition = getInitialBoxPosition($thumbnail);
         var $controller = $(".boxController");
+        var $dashboard = $(".boxDashboard");
         $controller.css({display : "none"});
-        $(".boxDashboard").css({display : "none"});
+        $dashboard.css({display : "none"});
         $box.delay(1).animate({
             'width' : $thumbnail.width(),
             'height' : $thumbnail.height(),
@@ -738,6 +838,8 @@ $(document).ready(function() {
             'left' : initialBoxPosition.left
         }, {
             step : function(now, fx) {
+                $controller.css({display : "none"});
+                $dashboard.css({display : "none"});
                 if(fx.prop === "width") {
                     $("#boxImg").css({
                         width : now
@@ -757,7 +859,7 @@ $(document).ready(function() {
                     height : "auto"
                 });
                 $("html").css({overflow : "auto"}); //enable scroll bar
-                $("#boxImg").remove();
+                //$("#boxImg").remove();
             }
         }); //end box animate
     }; //end $.boxClose
@@ -775,16 +877,13 @@ $(document).ready(function() {
         $(".boxController").css({display : 'none'}); //button display none
         $(".boxDashboard").css({display : "none"});
 
-        //set thumbnail for box
-        $boxContent
-            .append($("<img>", {
-                id : "boxImg",
-                src : $thumbnail.attr("src")
-            }).css({
+        $box.css({width : "", height : ""}); //initial box
+        $boxImg
+            .attr("src", $thumbnail.attr("src"))
+            .css({
                 "height" : $thumbnail.height(),
                 "width" : $thumbnail.width()
-            }).load(boxResize));
-        //end set thumbnail for box
+            });
 
         var initialBoxPosition = getInitialBoxPosition($thumbnail);
         $box.css({
@@ -973,12 +1072,21 @@ $(document).ready(function() {
             }
         }
     }; //end traversalThumbnails
+
+    setBoxLoadEvent = function() {
+        $boxImg.load(boxResize);
+    }; //end setBoxLoadEvent
+
     //end function sets
-    
+
+    var pageCount = 0; //multiDownload counter
+
+    //ugoira animate 
     var timeoutID = 0;
     var imgs = [];
     var bigUgoiraZipSrc = "";
 
+    //illust id list
     var illustIdList = [];
 
     traversalThumbnails();
@@ -992,5 +1100,6 @@ $(document).ready(function() {
     setUgoiraEvent();
     setTitleEvent();
     setResizeHandler();
+    setBoxLoadEvent();
 
 });
