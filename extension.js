@@ -537,13 +537,37 @@ $(document).ready(function() {
         }
     }; //end $.multiDownload
 
+    getTitleInitialWidth = function() {
+        var titleInitialWidth = $boxTitle.attr("data-initialwidth");
+        var gap = ($boxTitle.position().left + $boxTitle.outerWidth(true)) - ($boxDownload.position().left);
+        if($boxContent.attr("data-mode") === "manga" || $boxContent.attr("data-mode") === "ugoira_view") {
+            gap += 30; //have multidownload
+        }
+        console.log($boxTitle.position().left +"+"+ $boxTitle.outerWidth(true) +"-"+ $boxDownload.position().left +"-"+ 30 +"="+gap);
+        if(titleInitialWidth < 30) {
+            titleInitialWidth = 30;
+        } else if(gap > 0) {
+            titleInitialWidth -= gap;
+        }
+        return titleInitialWidth;
+    }; //end getTitleInitialWidth
+
     doSomethingAfterboxResize = function() {
         $("." + $boxContent.attr("data-mode")).css("display", "inline");
-        $boxTitle.css("display", "inline");
+        var titleInitialWidth = getTitleInitialWidth();
+        $boxTitle.attr({
+            "data-initialwidth" : titleInitialWidth
+        }).css({
+            display : "inline",
+            height : "30px",
+            width : titleInitialWidth
+        });
         $(".arrowIcon").css("display", "none");
         $boxUgoiraIcon.css("display", "none");
         if($boxContent.attr("data-mode") === "ugoira_view") {
-            if($boxContent.attr("data-new") === "true") {
+            if(ifBoxClose) {
+                return false;
+            } else if($boxContent.attr("data-new") === "true") {
                 timeoutID = window.setTimeout(changeImage, imgs[0].delay);
                 $boxContent.attr("data-new", false);
             }
@@ -677,9 +701,6 @@ $(document).ready(function() {
         var userId = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userId"));
         $boxTitle.html("<span class='bolder'>" + title + "</span>");
         var titleInitialWidth = $boxTitle.width();
-        if(titleInitialWidth < 30) {
-            titleInitialWidth = 30;
-        }
         $boxTitle.html(
                 "<span class='bolder'>" + title + "</span><br>" +
                 "ID : " + id + "<br>" +
@@ -692,9 +713,6 @@ $(document).ready(function() {
             "data-afterheight" : titleAfterHeight,
             "data-initialwidth" : titleInitialWidth,
             "data-afterwidth" : titleAfterWidth
-        }).css({
-            height : "30px",
-            width : titleInitialWidth
         });
 
         if(mode === "big") {
@@ -815,6 +833,7 @@ $(document).ready(function() {
     }; //end getInitialBoxPosition
 
     $.boxClose = function(event) {
+        ifBoxClose = true;
         if($boxContent.attr("data-mode") === "ugoira_view") {
             window.clearTimeout(timeoutID);
             $boxUgoiraIcon.attr("src", iconUrl.pause);
@@ -859,7 +878,6 @@ $(document).ready(function() {
                     height : "auto"
                 });
                 $("html").css({overflow : "auto"}); //enable scroll bar
-                //$("#boxImg").remove();
             }
         }); //end box animate
     }; //end $.boxClose
@@ -870,6 +888,7 @@ $(document).ready(function() {
     }; //end setBoxCloseEvent
 
     initialBox = function() {
+        ifBoxClose = false;
         var nowNum = $boxContent.attr("data-now");
         var $thumbnail = $("._layout-thumbnail[data-count=" + nowNum + "]").children(); //thumbnail
 
@@ -1078,6 +1097,8 @@ $(document).ready(function() {
     }; //end setBoxLoadEvent
 
     //end function sets
+
+    var ifBoxClose = true;
 
     var pageCount = 0; //multiDownload counter
 
