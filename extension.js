@@ -365,7 +365,6 @@ $(document).ready(function() {
     }; //end currentProgress
 
     $.download = function() {
-
         var $this = $(this);
         var position = $this.position();
         var left = position.left;
@@ -373,12 +372,12 @@ $(document).ready(function() {
         initialProgress(left, top);
 
         var mode = $boxContent.attr("data-mode");
-        var $boxImg = $("#boxImg");
         var src = $boxImg.attr("src");
 
         var bigSrc = "";
         if(mode === "ugoira_view") {
-            var gif = new GIF({workers : 1});
+            var gif = new GIF();
+            downloadingStuff.push(gif);
             for(var key in imgs) {
                 var img = new Image();
                 img.src = imgs[key].url;
@@ -389,18 +388,25 @@ $(document).ready(function() {
             });
             gif.on('finished', function(blob) {
                 var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-                saveAs(blob, "test." + dataType);
+                var downloadIllustId = "test";
+                saveAs(blob, downloadIllustId + "." + dataType);
+                $boxProgress.fadeOut();
             });
             gif.render();
         } else {
             bigSrc = getBigSrc(src, mode);
             $.when(getBlobAndDoubleCheck(bigSrc)).done(function(blob) {
+                if(blob === undefined) {
+                    return false;
+                }
                 if(blob.size) {
                     var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-                    saveAs(blob, "test." + dataType);
+                    var downloadIllustId = "test";
+                    saveAs(blob, downloadIllustId + "." + dataType);
                     $boxProgress.fadeOut();
                 } else {
                     //white flag
+                    console.log(blob);
                 }
             });
         }
@@ -409,6 +415,9 @@ $(document).ready(function() {
     getBlobAndDoubleCheck = function(url) {
         var deferred = $.Deferred();
         $.when(getBlob(url)).done(function(blob) {
+            if(blob === undefined) {
+                deferred.resolve();
+            }
             if(!blob.size) {
                 var mimeType = url.substring(url.lastIndexOf("."));
                 if(mimeType === ".jpg") {
@@ -430,6 +439,7 @@ $(document).ready(function() {
     getBlob = function(url) {
         var deferred = $.Deferred();
         var req = new XMLHttpRequest();
+        downloadingStuff.push(req);
 
         req.open("GET", url, true);
         req.responseType = "blob";
@@ -449,6 +459,10 @@ $(document).ready(function() {
             }
         };
 
+        req.onabort = function() {
+            deferred.resolve();
+        };
+
         req.onload = function(event) {
             var blob = req.response;
             deferred.resolve(blob);
@@ -463,13 +477,20 @@ $(document).ready(function() {
         var deferred = $.Deferred();
 
         $.when(getBlobAndDoubleCheck(imgLink)).done(function(blob) {
+            if(blob === undefined) {
+                deferred.resolve();
+            }
             if(blob.size) {
                 var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
                 var reader = new FileReader();
+                downloadingStuff.push(reader);
                 reader.onload = function() {
                     // reader.result contains the contents of blob as a typed array
                     zip.file("p" + number + "." + dataType, reader.result, {base64 : true});
                     deferred.resolve(zip);
+                };
+                reader.onabort = function() {
+                    deferred.resolve();
                 };
                 reader.readAsArrayBuffer(blob);
             } else {
@@ -479,14 +500,6 @@ $(document).ready(function() {
 
         return deferred;
     }; //end addImgToZip
-
-    generateZip = function(zip) {
-        var content = zip.generate({type : "blob"});
-
-        saveAs(content, "test.zip");
-
-        $boxProgress.fadeOut();
-    }; //end generateZip
 
     $.multiDownload = function() {
         var $this = $(this);
@@ -500,7 +513,6 @@ $(document).ready(function() {
         var mode = $boxContent.attr("data-mode");
         var currentPage = $boxContent.attr("data-page");
         var page = $boxContent.attr("data-allpage");
-        var $boxImg = $("#boxImg");
         var src = $boxImg.attr("src");
         var bigSrc = "";
 
@@ -521,16 +533,31 @@ $(document).ready(function() {
                 deferreds.push( $.addImgToZip(zip, imgLinks[key], key));
             }
 
-            $.when.apply(null, deferreds).done(generateZip);
+            $.when.apply(null, deferreds).done(function(zip) {
+                if(zip === undefined) {
+                    return false;
+                }
+                var content = zip.generate({type : "blob"});
+
+                var downloadIllustId = "test";
+                saveAs(content, downloadIllustId + ".zip");
+
+                $boxProgress.fadeOut();
+            });
         } else {
             //ugoira
             bigSrc = bigUgoiraZipSrc;
             $.when(getBlobAndDoubleCheck(bigSrc)).done(function(blob) {
+                if(blob === undefined) {
+                    return false;
+                }
                 if(blob.size) {
                     var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-                    saveAs(blob, "test." + dataType);
+                    var downloadIllustId = "test";
+                    saveAs(blob, downloadIllustId + "." + dataType);
                     $boxProgress.fadeOut();
                 } else {
+                    console.log(blob);
                     //white flag
                 }
             });
@@ -543,7 +570,6 @@ $(document).ready(function() {
         if($boxContent.attr("data-mode") === "manga" || $boxContent.attr("data-mode") === "ugoira_view") {
             gap += 30; //have multidownload
         }
-        console.log($boxTitle.position().left +"+"+ $boxTitle.outerWidth(true) +"-"+ $boxDownload.position().left +"-"+ 30 +"="+gap);
         if(titleInitialWidth < 30) {
             titleInitialWidth = 30;
         } else if(gap > 0) {
@@ -577,7 +603,7 @@ $(document).ready(function() {
     getImgSize = function() {
         //get initial picture size
         var medienPicture = new Image();
-        medienPicture.src = $("#boxImg").attr("src");
+        medienPicture.src = $boxImg.attr("src");
         //end get initial picture size
 
         var maxWidth = window.innerWidth - 100;
@@ -751,16 +777,18 @@ $(document).ready(function() {
                 var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
                 var reader = new FileReader();
                 reader.addEventListener("loadend", function() {
-                    // reader.result contains the contents of blob as a typed array
-                    var zipFile = new JSZip(reader.result);
-                    for(var key in imgs) {
-                        var uint8 = zipFile.files[imgs[key].file].asUint8Array();
-                        var blob = new Blob([uint8], {type : mimeType});
-                        var url = URL.createObjectURL(blob);
-                        imgs[key].url = url;
+                    if(!ifBoxClose) {
+                        // reader.result contains the contents of blob as a typed array
+                        var zipFile = new JSZip(reader.result);
+                        for(var key in imgs) {
+                            var uint8 = zipFile.files[imgs[key].file].asUint8Array();
+                            var blob = new Blob([uint8], {type : mimeType});
+                            var url = URL.createObjectURL(blob);
+                            imgs[key].url = url;
+                        }
+                        $boxContent.attr("data-ugoiranext", 1);
+                        $boxImg.attr("src", imgs[0].url);
                     }
-                    $boxContent.attr("data-ugoiranext", 1);
-                    $("#boxImg").attr("src", imgs[0].url);
                 });
                 reader.readAsArrayBuffer(blob);
                 }; //end req.onload
@@ -769,14 +797,12 @@ $(document).ready(function() {
             return false;
         }
 
-        var $boxImg = $("#boxImg");
-
         $boxImg.attr("src", medienSrc);
     }; //end setBoxDashBoardAndController
 
     function changeImage() {
         var next = $boxContent.attr("data-ugoiranext");
-        $("#boxImg").attr("src", imgs[next].url);
+        $boxImg.attr("src", imgs[next].url);
         $boxContent.attr("data-ugoiranext", getPageNum(next, imgs.length, 1));
         timeoutID = window.setTimeout(changeImage, imgs[next].delay);
     }
@@ -787,7 +813,6 @@ $(document).ready(function() {
         $(".boxController").css("display", "none");
         initialBoxLoading();
         var $this = $(this);
-        var $boxImg = $("#boxImg");
         var nowSrc = $boxImg.attr("src");
         var nowPage = $boxContent.attr("data-page");
         var allPage = $boxContent.attr("data-allpage");
@@ -833,6 +858,11 @@ $(document).ready(function() {
     }; //end getInitialBoxPosition
 
     $.boxClose = function(event) {
+        console.log(downloadingStuff);
+        while(downloadingStuff.length) {
+            var stuff = downloadingStuff.pop();
+            stuff.abort();
+        }
         ifBoxClose = true;
         if($boxContent.attr("data-mode") === "ugoira_view") {
             window.clearTimeout(timeoutID);
@@ -860,12 +890,12 @@ $(document).ready(function() {
                 $controller.css({display : "none"});
                 $dashboard.css({display : "none"});
                 if(fx.prop === "width") {
-                    $("#boxImg").css({
+                    $boxImg.css({
                         width : now
                     });
                 }
                 if(fx.prop === "height") {
-                    $("#boxImg").css({
+                    $boxImg.css({
                         height : now
                     });
                 }
@@ -878,6 +908,7 @@ $(document).ready(function() {
                     height : "auto"
                 });
                 $("html").css({overflow : "auto"}); //enable scroll bar
+                $("html").unbind();
             }
         }); //end box animate
     }; //end $.boxClose
@@ -888,6 +919,7 @@ $(document).ready(function() {
     }; //end setBoxCloseEvent
 
     initialBox = function() {
+
         ifBoxClose = false;
         var nowNum = $boxContent.attr("data-now");
         var $thumbnail = $("._layout-thumbnail[data-count=" + nowNum + "]").children(); //thumbnail
@@ -949,6 +981,9 @@ $(document).ready(function() {
                 initialEnlarge();
             }
         ).click(function() {
+            $("html").bind("mousewheel", function() {
+                return false;
+            });
 
             var $this = $(this); //enlargeIcon
             var currentNum = $this.attr("data-current");
@@ -1070,7 +1105,7 @@ $(document).ready(function() {
                 left : $(document).scrollLeft() + (window.innerWidth - $box.outerWidth(true))/2
             }); //end box animate
 
-            $("#boxImg").css({
+            $boxImg.css({
                 width : imgSize.width,
                 height : imgSize.height
             });
@@ -1079,8 +1114,8 @@ $(document).ready(function() {
 
     traversalThumbnails = function() {
         var layoutThumbnails = $("._layout-thumbnail");
-        var count = 0;
-        for(var i = 0; i < layoutThumbnails.length; i++) {
+        var count = illustIdList.length;
+        for(var i = count; i < layoutThumbnails.length; i++) {
             var $layoutThumbnail = $(layoutThumbnails[i]);
             var illustId = urlParam($layoutThumbnail.parent("a").attr("href"), "illust_id");
             if(illustId) {
@@ -1096,7 +1131,17 @@ $(document).ready(function() {
         $boxImg.load(boxResize);
     }; //end setBoxLoadEvent
 
+    setScrollEvent = function() {
+        $(window).scroll(function() {
+            var listLength = illustIdList.length;
+            if(listLength < $("._layout-thumbnail").length) {
+                traversalThumbnails();
+            }
+        });
+    }; //end setScrollEvent
     //end function sets
+
+    var downloadingStuff = [];
 
     var ifBoxClose = true;
 
@@ -1122,5 +1167,6 @@ $(document).ready(function() {
     setTitleEvent();
     setResizeHandler();
     setBoxLoadEvent();
+    setScrollEvent();
 
 });
