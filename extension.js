@@ -406,7 +406,6 @@ $(document).ready(function() {
                     $boxProgress.fadeOut();
                 } else {
                     //white flag
-                    console.log(blob);
                 }
             });
         }
@@ -417,6 +416,7 @@ $(document).ready(function() {
         $.when(getBlob(url)).done(function(blob) {
             if(blob === undefined) {
                 deferred.resolve();
+                return false;
             }
             if(!blob.size) {
                 var mimeType = url.substring(url.lastIndexOf("."));
@@ -461,6 +461,7 @@ $(document).ready(function() {
 
         req.onabort = function() {
             deferred.resolve();
+            return false;
         };
 
         req.onload = function(event) {
@@ -479,6 +480,7 @@ $(document).ready(function() {
         $.when(getBlobAndDoubleCheck(imgLink)).done(function(blob) {
             if(blob === undefined) {
                 deferred.resolve();
+                return false;
             }
             if(blob.size) {
                 var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
@@ -491,6 +493,7 @@ $(document).ready(function() {
                 };
                 reader.onabort = function() {
                     deferred.resolve();
+                    return false;
                 };
                 reader.readAsArrayBuffer(blob);
             } else {
@@ -500,6 +503,30 @@ $(document).ready(function() {
 
         return deferred;
     }; //end addImgToZip
+
+    checkZip = function(zip, imgLinks) {
+        var mimeType = ".jpg";
+        for(var key in imgLinks) {
+            var name = imgLinks[key].substring(imgLinks[key].indexOf("_p") + 1, imgLinks[key].lastIndexOf("."));
+            name = name + mimeType;
+            if(zip.files[name] === undefined) {
+                name = name.replace(mimeType, ".jpeg");
+                mimeType = ".jpeg";
+                if(zip.files[name] === undefined) {
+                    name = name.replace(mimeType, ".png");
+                    mimeType = ".png";
+                    if(zip.files[name] === undefined) {
+                        name = name.replace(mimeType, ".jpg");
+                        mimeType = ".jpg";
+                        if(zip.files[name] === undefined) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }; //checkZip
 
     $.multiDownload = function() {
         var $this = $(this);
@@ -534,7 +561,7 @@ $(document).ready(function() {
             }
 
             $.when.apply(null, deferreds).done(function(zip) {
-                if(zip === undefined) {
+                if(!checkZip(zip, imgLinks)) {
                     return false;
                 }
                 var content = zip.generate({type : "blob"});
@@ -557,7 +584,6 @@ $(document).ready(function() {
                     saveAs(blob, downloadIllustId + "." + dataType);
                     $boxProgress.fadeOut();
                 } else {
-                    console.log(blob);
                     //white flag
                 }
             });
@@ -808,6 +834,7 @@ $(document).ready(function() {
     }
 
     mangaPage = function() {
+        abortAllDownloadingStuff();
         $boxContent.attr("data-new", true);
         $(".boxDashboard").css("display", "none");
         $(".boxController").css("display", "none");
@@ -857,12 +884,15 @@ $(document).ready(function() {
         };
     }; //end getInitialBoxPosition
 
-    $.boxClose = function(event) {
-        console.log(downloadingStuff);
+    abortAllDownloadingStuff = function() {
         while(downloadingStuff.length) {
             var stuff = downloadingStuff.pop();
             stuff.abort();
         }
+    }; //abortAllDownloadingStuff
+
+    $.boxClose = function(event) {
+        abortAllDownloadingStuff();
         ifBoxClose = true;
         if($boxContent.attr("data-mode") === "ugoira_view") {
             window.clearTimeout(timeoutID);
@@ -1016,6 +1046,7 @@ $(document).ready(function() {
     }; //end setEnlarge
 
     pageBox = function() {
+        abortAllDownloadingStuff();
         if($boxContent.attr("data-mode") === "ugoira_view") {
             window.clearTimeout(timeoutID);
             $boxUgoiraIcon.attr("src", iconUrl.pause);
