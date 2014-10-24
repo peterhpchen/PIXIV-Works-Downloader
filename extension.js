@@ -365,6 +365,7 @@ $(document).ready(function() {
     }; //end currentProgress
 
     $.download = function() {
+        abortAllAsyncStuff();
         var $this = $(this);
         var position = $this.position();
         var left = position.left;
@@ -377,7 +378,7 @@ $(document).ready(function() {
         var bigSrc = "";
         if(mode === "ugoira_view") {
             var gif = new GIF();
-            downloadingStuff.push(gif);
+            asyncStuff.push(gif);
             for(var key in imgs) {
                 var img = new Image();
                 img.src = imgs[key].url;
@@ -388,7 +389,7 @@ $(document).ready(function() {
             });
             gif.on('finished', function(blob) {
                 var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-                var downloadIllustId = "test";
+                var downloadIllustId = illustIdList[parseInt($boxContent.attr("data-now"))];
                 saveAs(blob, downloadIllustId + "." + dataType);
                 $boxProgress.fadeOut();
             });
@@ -401,7 +402,7 @@ $(document).ready(function() {
                 }
                 if(blob.size) {
                     var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-                    var downloadIllustId = "test";
+                    var downloadIllustId = illustIdList[parseInt($boxContent.attr("data-now"))];
                     saveAs(blob, downloadIllustId + "." + dataType);
                     $boxProgress.fadeOut();
                 } else {
@@ -439,7 +440,7 @@ $(document).ready(function() {
     getBlob = function(url) {
         var deferred = $.Deferred();
         var req = new XMLHttpRequest();
-        downloadingStuff.push(req);
+        asyncStuff.push(req);
 
         req.open("GET", url, true);
         req.responseType = "blob";
@@ -485,7 +486,7 @@ $(document).ready(function() {
             if(blob.size) {
                 var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
                 var reader = new FileReader();
-                downloadingStuff.push(reader);
+                asyncStuff.push(reader);
                 reader.onload = function() {
                     // reader.result contains the contents of blob as a typed array
                     zip.file("p" + number + "." + dataType, reader.result, {base64 : true});
@@ -529,6 +530,7 @@ $(document).ready(function() {
     }; //checkZip
 
     $.multiDownload = function() {
+        abortAllAsyncStuff();
         var $this = $(this);
         var position = $this.position();
         var left = position.left;
@@ -566,7 +568,7 @@ $(document).ready(function() {
                 }
                 var content = zip.generate({type : "blob"});
 
-                var downloadIllustId = "test";
+                var downloadIllustId = illustIdList[parseInt($boxContent.attr("data-now"))];
                 saveAs(content, downloadIllustId + ".zip");
 
                 $boxProgress.fadeOut();
@@ -580,7 +582,7 @@ $(document).ready(function() {
                 }
                 if(blob.size) {
                     var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-                    var downloadIllustId = "test";
+                    var downloadIllustId = illustIdList[parseInt($boxContent.attr("data-now"))];
                     saveAs(blob, downloadIllustId + "." + dataType);
                     $boxProgress.fadeOut();
                 } else {
@@ -795,6 +797,7 @@ $(document).ready(function() {
             var zipSrc = ugoiraDetailData.src;
 
             var req = new XMLHttpRequest();
+            asyncStuff.push(req);
             req.open("GET", zipSrc, true);
             req.responseType = "blob";
 
@@ -802,20 +805,19 @@ $(document).ready(function() {
                 var blob = req.response;
                 var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
                 var reader = new FileReader();
-                reader.addEventListener("loadend", function() {
-                    if(!ifBoxClose) {
-                        // reader.result contains the contents of blob as a typed array
-                        var zipFile = new JSZip(reader.result);
-                        for(var key in imgs) {
-                            var uint8 = zipFile.files[imgs[key].file].asUint8Array();
-                            var blob = new Blob([uint8], {type : mimeType});
-                            var url = URL.createObjectURL(blob);
-                            imgs[key].url = url;
-                        }
-                        $boxContent.attr("data-ugoiranext", 1);
-                        $boxImg.attr("src", imgs[0].url);
+                asyncStuff.push(reader);
+                reader.onload = function() {
+                    // reader.result contains the contents of blob as a typed array
+                    var zipFile = new JSZip(reader.result);
+                    for(var key in imgs) {
+                        var uint8 = zipFile.files[imgs[key].file].asUint8Array();
+                        var blob = new Blob([uint8], {type : mimeType});
+                        var url = URL.createObjectURL(blob);
+                        imgs[key].url = url;
                     }
-                });
+                    $boxContent.attr("data-ugoiranext", 1);
+                    $boxImg.attr("src", imgs[0].url);
+                };
                 reader.readAsArrayBuffer(blob);
                 }; //end req.onload
 
@@ -834,7 +836,7 @@ $(document).ready(function() {
     }
 
     mangaPage = function() {
-        abortAllDownloadingStuff();
+        abortAllAsyncStuff();
         $boxContent.attr("data-new", true);
         $(".boxDashboard").css("display", "none");
         $(".boxController").css("display", "none");
@@ -884,15 +886,15 @@ $(document).ready(function() {
         };
     }; //end getInitialBoxPosition
 
-    abortAllDownloadingStuff = function() {
-        while(downloadingStuff.length) {
-            var stuff = downloadingStuff.pop();
+    abortAllAsyncStuff = function() {
+        while(asyncStuff.length) {
+            var stuff = asyncStuff.pop();
             stuff.abort();
         }
-    }; //abortAllDownloadingStuff
+    }; //abortAllAsyncStuff
 
     $.boxClose = function(event) {
-        abortAllDownloadingStuff();
+        abortAllAsyncStuff();
         ifBoxClose = true;
         if($boxContent.attr("data-mode") === "ugoira_view") {
             window.clearTimeout(timeoutID);
@@ -1046,7 +1048,7 @@ $(document).ready(function() {
     }; //end setEnlarge
 
     pageBox = function() {
-        abortAllDownloadingStuff();
+        abortAllAsyncStuff();
         if($boxContent.attr("data-mode") === "ugoira_view") {
             window.clearTimeout(timeoutID);
             $boxUgoiraIcon.attr("src", iconUrl.pause);
@@ -1172,7 +1174,7 @@ $(document).ready(function() {
     }; //end setScrollEvent
     //end function sets
 
-    var downloadingStuff = [];
+    var asyncStuff = [];
 
     var ifBoxClose = true;
 
