@@ -10,7 +10,8 @@ $(document).ready(function() {
         left : chrome.extension.getURL("image/arrows/left.png"),
         right : chrome.extension.getURL("image/arrows/right.png"),
         play : chrome.extension.getURL("image/play.png"),
-        pause : chrome.extension.getURL("image/pause.png")
+        pause : chrome.extension.getURL("image/pause.png"),
+        bookmark : chrome.extension.getURL("image/mark.png")
     }; //end iconUrl
 
     var $box = $("<div>", {
@@ -32,10 +33,20 @@ $(document).ready(function() {
     });
 
     var $boxMultiDownload = $("<img>", {
+        title : "Multiple Download",
         id : "boxMultiDownload",
         class : "icon overlay boxController manga ugoira_view",
         src : iconUrl.multiDownload
     });
+
+    var $boxBookmark = $("<a>", {
+        id : "boxBookmark",
+        class : "icon overlay boxController manga big ugoira_view"
+    }).append($("<img>", {
+        title : "Bookmark",
+        class : "icon overlay boxController manga big ugoira_view",
+        src : iconUrl.bookmark
+    }));
 
     var $boxLoading = $("<img>", {
         id : "boxLoading",
@@ -158,6 +169,8 @@ $(document).ready(function() {
                 $boxDownload
             ).append(
                 $boxMultiDownload
+            ).append(
+                $boxBookmark
             ).append(
                 $boxProgress
             ).append(
@@ -744,10 +757,17 @@ $(document).ready(function() {
         //parse web to get medien source
         var $parsed = $("<div>").append(data);
         var $aElement = $parsed.find('.works_display').find('a');
-        var detailHref = $aElement[$aElement.length - 1].href;
-        var mode = urlParam(detailHref, "mode");
+        var detailHref, mode, medienSrc;
+        if($aElement.length === 0) {
+            detailHref = $parsed.find('.wrapper').last().children('img').attr('data-src');
+            mode = "big";
+            medienSrc = $parsed.find('.works_display').children('div').children('img').attr('src');
+        } else {
+            detailHref = $aElement[$aElement.length - 1].href;
+            mode = urlParam(detailHref, "mode");
+            medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
+        }
         $boxContent.attr("data-mode", mode);
-        var medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
         var detailScript = $parsed.find("#wrapper").children("script")[0].innerText;
         var title = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustTitle"));
         var id = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustId"));
@@ -761,6 +781,9 @@ $(document).ready(function() {
                 "NAME : " + name + "<br>" +
                 "USER ID : " + userId
         );
+
+        $boxBookmark.attr("href", "http://www.pixiv.net/bookmark_add.php?type=illust&illust_id=" + id);
+
         var titleAfterHeight = $boxTitle.height();
         var titleAfterWidth = $boxTitle.width();
         $boxTitle.attr({

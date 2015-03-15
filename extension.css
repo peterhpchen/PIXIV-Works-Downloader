@@ -48,6 +48,11 @@
     right : 45px;
 }
 
+#boxBookmark{
+    right : -15px;
+    top : 15px;
+}
+
 #boxUpIcon, #boxDownIcon, #boxLeftIcon, #boxRightIcon, #boxUgoiraIcon {
     opacity : 1.0;
 }
