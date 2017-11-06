@@ -224,9 +224,9 @@ $(document).ready(function() {
 
     setThumbnail = function($thumbnail) {
          
-        $thumbnail.hover(
+        $thumbnail.parent("a").hover(
             function(event) {
-                var $this = $(this); //thumbnail
+                var $this = $(this).children(); //thumbnail
 
                 //width() : element
                 //outerWidth() : (border + padding)*2 + element
