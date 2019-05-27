@@ -386,7 +386,7 @@ $(document).ready(function() {
         initialProgress(left, top);
 
         var mode = $boxContent.attr("data-mode");
-        var src = $boxImg.attr("src");
+        var originalSrc = $boxImg.attr("original-src");
 
         var bigSrc = "";
         if(mode === "ugoira_view") {
@@ -394,7 +394,7 @@ $(document).ready(function() {
             asyncStuff.push(gif);
             for(var key in imgs) {
                 var img = new Image();
-                img.src = imgs[key].url;
+                img.src = imgs[key].originalUrl;
                 gif.addFrame(img, {delay : imgs[key].delay});
             }
             gif.on("progress", function(percent) {
@@ -408,7 +408,7 @@ $(document).ready(function() {
             });
             gif.render();
         } else {
-            bigSrc = getBigSrc(src, mode);
+            bigSrc = originalSrc;
             $.when(getBlobAndDoubleCheck(bigSrc)).done(function(blob) {
                 if(blob === undefined) {
                     return false;
@@ -555,11 +555,11 @@ $(document).ready(function() {
         var mode = $boxContent.attr("data-mode");
         var currentPage = $boxContent.attr("data-page");
         var page = $boxContent.attr("data-allpage");
-        var src = $boxImg.attr("src");
+        var originalSrc = $boxImg.attr("original-src");
         var bigSrc = "";
 
         if(mode === "manga") {
-            bigSrc = getBigSrc(src, "manga");
+            bigSrc = originalSrc;
             bigSrc = bigSrc.replace("_p" + currentPage, "_p0");
 
             var imgLinks = [bigSrc];
@@ -752,103 +752,143 @@ $(document).ready(function() {
         }
     }; //end getJsonFromScript
 
-    setBoxDashboardAndController = function(data) {
-        
-        //parse web to get medien source
-        var $parsed = $("<div>").append(data);
-        var $aElement = $parsed.find('.works_display').find('a');
-        var detailHref, mode, medienSrc;
-        if($aElement.length === 0) {
-            detailHref = $parsed.find('.wrapper').last().children('img').attr('data-src');
-            mode = "big";
-            medienSrc = $parsed.find('.works_display').children('div').children('img').attr('src');
-        } else {
-            detailHref = $aElement[$aElement.length - 1].href;
-            mode = urlParam(detailHref, "mode");
-            medienSrc = $parsed.find('.works_display').children('a').children('div').children('img').attr('src');
-        }
-        $boxContent.attr("data-mode", mode);
-        var detailScript = $parsed.find("#wrapper").children("script")[0].innerText;
-        var title = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustTitle"));
-        var id = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.illustId"));
-        var name = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userName"));
-        var userId = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.userId"));
-        $boxTitle.html("<span class='bolder'>" + title + "</span>");
-        var titleInitialWidth = $boxTitle.width();
-        $boxTitle.html(
-                "<span class='bolder'>" + title + "</span><br>" +
-                "ID : " + id + "<br>" +
-                "NAME : " + name + "<br>" +
-                "USER ID : " + userId
-        );
+    setBoxTitle = (data) => {
+        const {illustTitle, illustId, userName, userId} = data;
 
-        $boxBookmark.attr("href", "http://www.pixiv.net/bookmark_add.php?type=illust&illust_id=" + id);
+        $boxTitle.html("<span class='bolder'>" + illustTitle + "</span>");
+
+        var titleInitialWidth = $boxTitle.width();
+
+        $boxTitle.html(
+            "<span class='bolder'>" + illustTitle + "</span><br>" +
+            "ID : " + illustId + "<br>" +
+            "NAME : " + userName + "<br>" +
+            "USER ID : " + userId
+        );
 
         var titleAfterHeight = $boxTitle.height();
         var titleAfterWidth = $boxTitle.width();
+
         $boxTitle.attr({
             "data-afterheight" : titleAfterHeight,
             "data-initialwidth" : titleInitialWidth,
             "data-afterwidth" : titleAfterWidth
         });
+    };
+
+    getIllustType = ({illustType, pageCount}) => {
+        switch (illustType) {
+            case 0:
+                if(pageCount > 1) return 'manga';
+                return 'big';
+            case 1:
+                return 'manga';
+            case 2:
+                return 'ugoira_view';      
+            default:
+                return 'big';
+        }
+    }
+
+    setBoxDashboardAndController = function(data) {
+        const {body: illustData} = data;
+        var detailHref, mode, medienSrc;
+
+        mode = getIllustType(illustData);
+        medienSrc = illustData.urls.regular;
+        detailHref = illustData.urls.original;
+
+        $boxContent.attr("data-mode", mode);
+
+        setBoxTitle(illustData);
+        
+        $boxBookmark.attr("href", "http://www.pixiv.net/bookmark_add.php?type=illust&illust_id=" + illustData.illustId);
 
         if(mode === "big") {
             $boxType.html("<span class='bolder'>Single</span>");
         } else if(mode === "manga") {
             $boxType.html("<span class='bolder'>Multiple</span>");
-            if(medienSrc.indexOf("600x600") === -1) {
-                medienSrc = medienSrc.replace("_m", "_p0");
-            } else {
-                medienSrc = medienSrc.replace("600x600", "1200x1200");
-            }
-            var results = new RegExp("(\\d+)").exec($parsed.find('.work-info').find('.meta').children('li:nth-child(2)')[0].innerText);
-            var page = results[1];
             $boxContent.attr({
                 "data-page" : 0,
-                "data-allpage" : page
+                "data-allpage" : illustData.pageCount
             });
-            $boxPage.html("1&nbsp;/&nbsp;" + page);
+            $boxPage.html("1&nbsp;/&nbsp;" + illustData.pageCount);
         } else if(mode === "ugoira_view") {
             $boxType.html("<span class='bolder'>Animate</span>");
-            var ugoiraDetailData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustData"));
-            var bigUgoiraData = $.parseJSON(getJsonFromScript(detailScript, "pixiv.context.ugokuIllustFullscreenData"));
-            bigUgoiraZipSrc = bigUgoiraData.src;
 
-            imgs = ugoiraDetailData.frames;
-            var mimeType = ugoiraDetailData.mime_type;
+            const ugoiraMetaHref = `/ajax/illust/${illustData.illustId}/ugoira_meta`
+            $.get(ugoiraMetaHref, (metaResult) => {
+                const {body: meta} = metaResult;
 
-            var zipSrc = ugoiraDetailData.src;
+                bigUgoiraZipSrc = meta.originalSrc;
 
-            var req = new XMLHttpRequest();
-            asyncStuff.push(req);
-            req.open("GET", zipSrc, true);
-            req.responseType = "blob";
+                var ugoiraDetailData = meta;
+                imgs = ugoiraDetailData.frames;
+                var mimeType = ugoiraDetailData.mime_type;
+                var zipSrc = ugoiraDetailData.src;
 
-            req.onload = function(event) {
-                var blob = req.response;
-                var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
-                var reader = new FileReader();
-                asyncStuff.push(reader);
-                reader.onload = function() {
-                    // reader.result contains the contents of blob as a typed array
-                    var zipFile = new JSZip(reader.result);
-                    for(var key in imgs) {
-                        var uint8 = zipFile.files[imgs[key].file].asUint8Array();
-                        var blob = new Blob([uint8], {type : mimeType});
-                        var url = URL.createObjectURL(blob);
-                        imgs[key].url = url;
-                    }
-                    $boxContent.attr("data-ugoiranext", 1);
-                    $boxImg.attr("src", imgs[0].url);
-                };
-                reader.readAsArrayBuffer(blob);
-                }; //end req.onload
+                var req = new XMLHttpRequest();
+                asyncStuff.push(req);
+                req.open("GET", zipSrc, true);
+                req.responseType = "blob";
 
-            req.send();
-            return false;
+                req.onload = function(event) {
+                    var blob = req.response;
+                    var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
+                    var reader = new FileReader();
+                    asyncStuff.push(reader);
+                    reader.onload = function() {
+                        // reader.result contains the contents of blob as a typed array
+                        var zipFile = new JSZip(reader.result);
+                        for(var key in imgs) {
+                            var uint8 = zipFile.files[imgs[key].file].asUint8Array();
+                            var blob = new Blob([uint8], {type : mimeType});
+                            var url = URL.createObjectURL(blob);
+                            imgs[key].url = url;
+                        }
+                        $boxContent.attr("data-ugoiranext", 1);
+                        $boxImg.attr("src", imgs[0].url);
+                    };
+                    reader.readAsArrayBuffer(blob);
+                    }; //end req.onload
+
+                req.send();
+
+                var originalReq = new XMLHttpRequest();
+                asyncStuff.push(originalReq);
+                originalReq.open("GET", bigUgoiraZipSrc, true);
+                originalReq.responseType = "blob";
+
+                originalReq.onload = function(event) {
+                    var blob = originalReq.response;
+                    var dataType = blob.type.substring(blob.type.indexOf("/") + 1);
+                    var reader = new FileReader();
+                    asyncStuff.push(reader);
+                    reader.onload = function() {
+                        // reader.result contains the contents of blob as a typed array
+                        var zipFile = new JSZip(reader.result);
+                        for(var key in imgs) {
+                            var uint8 = zipFile.files[imgs[key].file].asUint8Array();
+                            var blob = new Blob([uint8], {type : mimeType});
+                            var url = URL.createObjectURL(blob);
+                            imgs[key].originalUrl = url;
+                        }
+                        // $boxContent.attr("data-ugoiranext", 1);
+                        // $boxImg.attr("src", imgs[0].originalUrl);
+                    };
+                    reader.readAsArrayBuffer(blob);
+                    }; //end originalReq.onload
+
+                originalReq.send();
+                
+                return false;
+            });
         }
 
-        $boxImg.attr("src", medienSrc);
+        if(mode !== "ugoira_view") {
+            $boxImg.attr("src", medienSrc);
+            $boxImg.attr("original-src", detailHref);
+        }
     }; //end setBoxDashBoardAndController
 
     function changeImage() {
@@ -866,6 +906,7 @@ $(document).ready(function() {
         initialBoxLoading();
         var $this = $(this);
         var nowSrc = $boxImg.attr("src");
+        var nowOriginalSrc = $boxImg.attr("original-src");
         var nowPage = $boxContent.attr("data-page");
         var allPage = $boxContent.attr("data-allpage");
         var newPage = 0;
@@ -876,6 +917,8 @@ $(document).ready(function() {
         }
         var newSrc = nowSrc.replace("_p" + nowPage, "_p" + newPage);
         $boxImg.attr("src", newSrc);
+        var newOriginalSrc = nowOriginalSrc.replace("_p" + nowPage, "_p" + newPage);
+        $boxImg.attr("original-src", newOriginalSrc);
         $boxContent.attr("data-page", newPage);
         var humanPage = parseInt(newPage) + 1;
         $boxPage.html(humanPage + "&nbsp;/&nbsp;" + allPage);
@@ -1043,7 +1086,7 @@ $(document).ready(function() {
             var $this = $(this); //enlargeIcon
             var currentNum = $this.attr("data-current");
 
-            var href = "/member_illust.php?mode=medium&illust_id=" + illustIdList[currentNum]; //picture link
+            var href = "/ajax/illust/" + illustIdList[currentNum]; //picture link
 
             $boxContent.attr({
                 "data-new" : true,
@@ -1091,7 +1134,7 @@ $(document).ready(function() {
         }
         initialBoxLoading();
 
-        var href = "/member_illust.php?mode=medium&illust_id=" + illustIdList[$boxContent.attr("data-now")]; //picture link
+        var href = "/ajax/illust/" + illustIdList[$boxContent.attr("data-now")]; //picture link
         getDetailByAjax(href);
     }; //end pageBox
 
