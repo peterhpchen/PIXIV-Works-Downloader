@@ -1,26 +1,35 @@
-More easily view works on PIXIV.
+# PIXIV Viewer
 
-This extension can also easily download picture.
+It is a Chrome extesnion for view illusts easily on PIXIV.
 
-***feature***
+This extension can also download pictures easily.
 
-View
+## Download Extension
 
-1.Switch works by next and preview works buttons.
-2.Change page by next and preview page buttons in multiple mode.
-3.Detail information.
-4.Work type.
-5.Page number.
+* [Chrome Web Store](https://chrome.google.com/webstore/detail/pixiv-viewer/iennmgkhodlaphjanjeincjlolinlhng)
 
-download
+## Feature
 
-single mode : 
-Download bigger size by download button.
+### View
 
-multiple mode :
-1.Download bigger size by download button.
-2.Download multiple works by multi-download button.
+1. Switch illusts by next and previous works buttons.
+2. Change page by up and down page buttons in multiple mode.
+3. Detail information.
+4. Illust type.
+5. Page number.
 
-animate mode :
-1.Download gif by download button.
-2.Download multiple pictures by multi-download button.
+### Download
+
+#### Single mode
+
+Download bigger size image by download button.
+
+#### Multiple mode
+
+1. Download bigger size image by download button.
+2. Download multiple images by multi-download button.
+
+#### Animate mode
+
+1. Download gif by download button.
+2. Download multiple pictures by multi-download button.
