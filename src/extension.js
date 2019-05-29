@@ -390,10 +390,13 @@ $(document).ready(function() {
 
         var bigSrc = "";
         if(mode === "ugoira_view") {
-            var gif = new GIF();
+            var gif = new GIF({
+                quality: 1,
+                workers: 4
+            });
             asyncStuff.push(gif);
             for(var key in imgs) {
-                var img = new Image();
+                var img = new Image(imgs[key].originalWidth, imgs[key].originalHeight);
                 img.src = imgs[key].originalUrl;
                 gif.addFrame(img, {delay : imgs[key].delay});
             }
@@ -872,6 +875,8 @@ $(document).ready(function() {
                             var blob = new Blob([uint8], {type : mimeType});
                             var url = URL.createObjectURL(blob);
                             imgs[key].originalUrl = url;
+                            imgs[key].originalWidth = illustData.width;
+                            imgs[key].originalHeight = illustData.height;
                         }
                         // $boxContent.attr("data-ugoiranext", 1);
                         // $boxImg.attr("src", imgs[0].originalUrl);
