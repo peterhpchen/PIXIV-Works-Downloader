@@ -17,7 +17,7 @@
             "matches" : ["https://www.pixiv.net/*"],
 		    "exclude_globs" : ["*medium*", "*index*"],
             "css" : [ "extension.css" ],
-            "js" : [ "lib/jquery-2.1.1.min.js", "lib/FileSaver.min.js", "lib/jszip.min.js", "lib/gif.js", "lib/patch-worker.js", "extension.js" ]
+            "js" : [ "lib/jquery-2.1.1.min.js", "lib/patch-worker.js", "lib/FileSaver.min.js", "lib/jszip.min.js", "lib/gif.js", "lib/gif.worker.js", "extension.js" ]
         }     
     ],
 	

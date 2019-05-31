@@ -1,4 +1,5 @@
-$(document).ready(function() { 
+$(document).ready(function() {
+    const gifWorkerUrl = chrome.extension.getURL('lib/gif.worker.js');
     var iconUrl = {
         enlarge : chrome.extension.getURL("image/enlarge.png"),
         cross : chrome.extension.getURL("image/cross.png"),
@@ -392,13 +393,27 @@ $(document).ready(function() {
         if(mode === "ugoira_view") {
             var gif = new GIF({
                 quality: 1,
-                workers: 4
+                workers: 4,
+                workerScript: gifWorkerUrl,
+                debug: true
             });
             asyncStuff.push(gif);
-            for(var key in imgs) {
-                var img = new Image(imgs[key].originalWidth, imgs[key].originalHeight);
+
+            let unloadImgCount = imgs.length;
+            let imgObjs = new Array(unloadImgCount);
+            for(let key in imgs) {
+                let img = new Image();
+                img.onload = () => {
+                    imgObjs[key] = img;
+                    unloadImgCount--;
+                    if(unloadImgCount === 0) {
+                        for(let i in imgs) {
+                            gif.addFrame(imgObjs[i], {delay : imgs[i].delay});
+                        }
+                        gif.render();
+                    }
+                };
                 img.src = imgs[key].originalUrl;
-                gif.addFrame(img, {delay : imgs[key].delay});
             }
             gif.on("progress", function(percent) {
                 currentProgress(percent);
@@ -409,7 +424,6 @@ $(document).ready(function() {
                 saveAs(blob, downloadIllustId + "." + dataType);
                 $boxProgress.fadeOut();
             });
-            gif.render();
         } else {
             bigSrc = originalSrc;
             $.when(getBlobAndDoubleCheck(bigSrc)).done(function(blob) {
