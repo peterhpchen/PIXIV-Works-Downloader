@@ -659,16 +659,11 @@ $(document).ready(function() {
     }; //end doSomethingAfterboxResize
 
     getImgSize = function() {
-        //get initial picture size
-        var medienPicture = new Image();
-        medienPicture.src = $boxImg.attr("src");
-        //end get initial picture size
-
         var maxWidth = window.innerWidth - 100;
         var maxHeight = window.innerHeight - 100;
         
-        var ImgWidth = medienPicture.width;
-        var ImgHeight = medienPicture.height;
+        var ImgWidth = $boxImg.get(0).naturalWidth;
+        var ImgHeight = $boxImg.get(0).naturalHeight;
 
         if(maxWidth < ImgWidth) {
             ImgHeight = ImgHeight*maxWidth/ImgWidth;
