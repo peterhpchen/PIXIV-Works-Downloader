@@ -2,3 +2,6 @@ node_modules
 
 dist
 zip
+
+# Finder
+.DS_Store
