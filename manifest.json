@@ -1,10 +1,10 @@
 {
     "manifest_version" : 2,
-    "author" : "HP Chen",
+    "author" : "Peter Chen",
     "name" : "PIXIV Viewer",
     "version" : "1.2.2",
     
-    "description" : "More easily view artist's works on PIXIV",
+    "description" : "A Chrome extension which download the specify artist's illusts on PIXIV",
     "icons" : {
         "16" : "image/icons/PIXIVViewer16.png",
         "32" : "image/icons/PIXIVViewer32.png",
