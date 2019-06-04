@@ -1,5 +1,7 @@
 # PIXIV Viewer
 
+![hero](./hero.jpg)
+
 It is a Chrome extesnion for view illusts easily on PIXIV.
 
 This extension can also download pictures easily.
